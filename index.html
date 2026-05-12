@@ -1,22 +1,523 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>הזמנה · שיראל & הלל · Eucalyptus</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="theme-eucalyptus.css">
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>שיראל & הלל · 09.08.2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@200;300;400;500;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Allura&family=Great+Vibes&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<style>
+/* ── Base styles ── */
+:root {
+  --cream: #FAF6EF; --cream-deep: #F3ECDF;
+  --nude: #E8DDC9; --nude-deep: #D4C2A5;
+  --copper: #B08D5C; --copper-deep: #8C6E42; --copper-light: #D4B68A;
+  --ink: #2A2520; --ink-soft: #5A4F44;
+  --line: rgba(42,37,32,0.18);
+  --font-serif: 'Frank Ruhl Libre','Cormorant Garamond',serif;
+  --font-body: 'Heebo',sans-serif;
+  --font-script-display: 'Great Vibes',cursive;
+  --font-latin-serif: 'Cormorant Garamond',serif;
+}
+/* ── Eucalyptus theme overrides ── */
+:root {
+  --cream: #FCFAF6; --cream-deep: #F2EEE5;
+  --nude: #DDE3D5; --nude-deep: #A8B59A;
+  --copper: #4F6B52; --copper-deep: #2E4632; --copper-light: #8FA68F;
+  --ink: #1F2A22; --ink-soft: #4A574E;
+  --line: rgba(31,42,34,0.16);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{font-family:var(--font-body);color:var(--ink);background:var(--cream);direction:rtl;-webkit-font-smoothing:antialiased;}
+.gold-foil{
+  background:linear-gradient(100deg,#2E4632 0%,#466349 25%,#6B855F 45%,#87A07A 50%,#6B855F 55%,#466349 75%,#2E4632 100%);
+  background-size:200% 100%;-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;animation:shimmer 6s ease-in-out infinite;
+  padding:0.25em 0.2em;margin:-0.25em -0.2em;display:inline-block;
+}
+@keyframes shimmer{0%,100%{background-position:100% 50%;}50%{background-position:0% 50%;}}
+.copper-line{height:1px;background:linear-gradient(90deg,transparent 0%,var(--copper) 20%,var(--copper-light) 50%,var(--copper) 80%,transparent 100%);}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity 1.4s cubic-bezier(0.22,0.61,0.36,1),transform 1.4s cubic-bezier(0.22,0.61,0.36,1);}
+.reveal.in{opacity:1;transform:translateY(0);}
+.reveal.delay-1{transition-delay:0.15s;}.reveal.delay-2{transition-delay:0.3s;}
+.reveal.delay-3{transition-delay:0.45s;}.reveal.delay-4{transition-delay:0.6s;}
+.reveal.delay-5{transition-delay:0.75s;}
+.petal-field{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
+.petal{position:absolute;top:-10vh;opacity:0;animation:drift linear infinite;}
+@keyframes drift{0%{transform:translateY(0) translateX(0) rotate(0deg);opacity:0;}10%{opacity:0.55;}90%{opacity:0.45;}100%{transform:translateY(120vh) translateX(var(--drift,80px)) rotate(540deg);opacity:0;}}
+.sparkle{position:absolute;width:4px;height:4px;border-radius:50%;background:radial-gradient(circle,rgba(184,212,176,0.9) 0%,var(--copper) 50%,transparent 70%);pointer-events:none;animation:sparkle-pulse 3s ease-in-out infinite;}
+@keyframes sparkle-pulse{0%,100%{opacity:0;transform:scale(0.6);}50%{opacity:1;transform:scale(1.4);}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:16px 36px;font-family:var(--font-serif);font-size:16px;font-weight:400;letter-spacing:0.12em;text-decoration:none;cursor:pointer;border:none;transition:all 0.4s cubic-bezier(0.22,0.61,0.36,1);position:relative;overflow:hidden;}
+.btn-outline{background:transparent;color:var(--ink);border:1px solid var(--copper);}
+.btn-outline:hover{background:var(--copper);color:var(--cream);letter-spacing:0.18em;}
+.btn-solid{background:var(--copper);color:var(--cream);}
+.btn-solid:hover{background:var(--copper-deep);letter-spacing:0.18em;}
+.form-row{margin-bottom:22px;}
+.form-label{display:block;font-family:var(--font-serif);font-size:13px;letter-spacing:0.16em;color:var(--ink-soft);margin-bottom:8px;text-transform:uppercase;}
+.form-input,.form-select,.form-textarea{width:100%;background:transparent;border:none;border-bottom:1px solid var(--line);padding:14px 2px;font-family:var(--font-body);font-size:17px;color:var(--ink);outline:none;transition:border-color 0.3s;font-weight:400;}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--ink-soft);font-family:var(--font-serif);font-weight:500;font-size:15px;letter-spacing:0.04em;opacity:0.85;}
+.form-textarea{border:1px solid var(--line);padding:12px 14px;resize:vertical;min-height:80px;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--copper);}
+.form-radio-group{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:10px;}
+.form-radio{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;min-height:96px;padding:18px 14px;background:#F8F6F0;border:1px solid rgba(79,107,82,0.28);border-radius:18px;font-family:var(--font-serif);font-size:17px;font-weight:500;color:var(--ink);line-height:1.35;transition:all 0.25s ease;white-space:pre-line;}
+.form-radio:hover{border-color:var(--copper);background:#EFF5ED;}
+.form-radio input{position:absolute;opacity:0;pointer-events:none;}
+.form-radio:has(input:checked){border-color:var(--copper-deep);border-width:2px;background:#E8F0E5;box-shadow:0 4px 14px rgba(46,70,50,0.12);padding:17px 13px;}
+.ornament-divider{display:flex;align-items:center;justify-content:center;gap:16px;width:100%;max-width:420px;margin:0 auto;color:var(--copper);}
+.ornament-divider .line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--copper),transparent);}
+.ornament-divider svg{display:block;}
+.countdown-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:520px;margin:0 auto;direction:ltr;}
+.countdown-cell{text-align:center;padding:18px 8px;border:1px solid var(--line);background:rgba(255,255,255,0.4);backdrop-filter:blur(2px);}
+.countdown-num{font-family:var(--font-serif);font-weight:500;font-size:clamp(36px,5vw,56px);line-height:1;color:var(--copper-deep);font-variant-numeric:tabular-nums;}
+.countdown-label{margin-top:10px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink);font-weight:500;font-family:var(--font-serif);}
+::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:var(--cream-deep);}::-webkit-scrollbar-thumb{background:var(--nude-deep);}::-webkit-scrollbar-thumb:hover{background:var(--copper);}
+.photo-placeholder{background:repeating-linear-gradient(135deg,var(--nude) 0px,var(--nude) 2px,var(--cream-deep) 2px,var(--cream-deep) 14px);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.18em;color:var(--ink-soft);text-transform:uppercase;}
+@media(max-width:720px){.invite-grid-3{grid-template-columns:1fr!important;}.invite-grid-3>*{border-inline-end:none!important;border-bottom:1px solid var(--line)!important;}.invite-grid-3>*:last-child{border-bottom:none!important;}}
+@media(max-width:600px){.countdown-grid{grid-template-columns:repeat(2,1fr)!important;max-width:320px!important;}.form-radio-group{grid-template-columns:1fr 1fr!important;}}
+</style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel" src="shared.jsx"></script>
-  <script type="text/babel" src="variation-1.jsx"></script>
-  <script type="text/babel" data-presets="env,react">
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<Variation1 />);
-  </script>
+<div id="root"></div>
+<script type="text/babel" data-presets="env,react">
+
+/* =========================================================
+   SHARED
+   ========================================================= */
+const WEDDING_DATA = {
+  date: new Date('2026-08-09T18:30:00+03:00'),
+};
+
+function useReveal() {
+  React.useEffect(() => {
+    const els = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: 0.12, rootMargin: '0px 0px -50px 0px' });
+    els.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  });
+}
+
+function useCountdown(target) {
+  const calc = () => {
+    const ms = Math.max(0, target.getTime() - Date.now());
+    return { days: Math.floor(ms/86400000), hours: Math.floor((ms%86400000)/3600000), mins: Math.floor((ms%3600000)/60000), secs: Math.floor((ms%60000)/1000) };
+  };
+  const [t, setT] = React.useState(calc);
+  React.useEffect(() => { const id = setInterval(() => setT(calc()), 1000); return () => clearInterval(id); }, []);
+  return t;
+}
+
+function SparkleField({ count = 18 }) {
+  const items = React.useMemo(() => Array.from({length:count}).map((_,i) => ({
+    id:i, top:Math.random()*100, left:Math.random()*100,
+    delay:Math.random()*3, dur:2+Math.random()*3, size:3+Math.random()*4
+  })), [count]);
+  return <>{items.map(s => <div key={s.id} className="sparkle" style={{top:s.top+'%',left:s.left+'%',width:s.size,height:s.size,animationDelay:s.delay+'s',animationDuration:s.dur+'s',position:'fixed'}} />)}</>;
+}
+
+function OrnamentSimple() {
+  return (
+    <div className="ornament-divider">
+      <span className="line"></span>
+      <svg width="38" height="14" viewBox="0 0 38 14" fill="none">
+        <circle cx="19" cy="7" r="2.4" fill="currentColor"/>
+        <circle cx="6" cy="7" r="1" fill="currentColor"/>
+        <circle cx="32" cy="7" r="1" fill="currentColor"/>
+      </svg>
+      <span className="line"></span>
+    </div>
+  );
+}
+
+function OrnamentBotanic() {
+  return (
+    <div className="ornament-divider">
+      <span className="line"></span>
+      <svg width="64" height="22" viewBox="0 0 64 22" fill="none" stroke="currentColor" strokeWidth="0.9">
+        <path d="M2 11 C 14 11, 22 4, 32 11 C 42 18, 50 11, 62 11"/>
+        <path d="M22 7 C 24 4, 26 4, 28 7"/>
+        <path d="M36 15 C 38 18, 40 18, 42 15"/>
+        <circle cx="32" cy="11" r="1.6" fill="currentColor"/>
+      </svg>
+      <span className="line"></span>
+    </div>
+  );
+}
+
+function OrnamentMonogram({ a='ש', b='ה' }) {
+  return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <svg width="120" height="84" viewBox="0 0 120 84" fill="none" stroke="var(--copper)" strokeWidth="0.8">
+        <ellipse cx="60" cy="42" rx="54" ry="34"/>
+        <ellipse cx="60" cy="42" rx="48" ry="29" strokeOpacity="0.45"/>
+        <text x="42" y="52" fontFamily="var(--font-serif)" fontSize="30" fill="var(--copper-deep)" stroke="none" fontWeight="300" textAnchor="middle">{a}</text>
+        <text x="60" y="52" fontFamily="var(--font-serif)" fontSize="22" fill="var(--copper)" stroke="none">&amp;</text>
+        <text x="78" y="52" fontFamily="var(--font-serif)" fontSize="30" fill="var(--copper-deep)" stroke="none" fontWeight="300" textAnchor="middle">{b}</text>
+      </svg>
+    </div>
+  );
+}
+
+function PhotoPlaceholder({ ratio='3/4', label='PHOTO' }) {
+  return <div className="photo-placeholder" style={{aspectRatio:ratio,width:'100%'}}>{label}</div>;
+}
+
+const Ic = {
+  glass: <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="var(--copper)" strokeWidth="0.9"><path d="M6 4 L 16 4 L 14 11 C 14 13, 12 13.5, 11 13.5 C 10 13.5, 8 13, 8 11 Z"/><path d="M11 13.5 L 11 18"/><path d="M8 18 L 14 18"/></svg>,
+  arch:  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="var(--copper)" strokeWidth="0.9"><path d="M3 19 L 3 11 C 3 6, 7 3, 11 3 C 15 3, 19 6, 19 11 L 19 19"/><path d="M11 3 L 11 19"/></svg>,
+  plate: <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="var(--copper)" strokeWidth="0.9"><circle cx="11" cy="11" r="8"/><circle cx="11" cy="11" r="5"/></svg>,
+  music: <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="var(--copper)" strokeWidth="0.9"><circle cx="6" cy="16" r="2.5"/><circle cx="16" cy="14" r="2.5"/><path d="M8.5 16 L 8.5 5 L 18.5 4 L 18.5 14"/></svg>,
+};
+
+function ScheduleRow({ time, title, sub, icon, last }) {
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'90px 1fr',gap:24,padding:'24px 0',borderBottom:last?'none':'1px solid var(--line)',alignItems:'flex-start'}}>
+      <div style={{textAlign:'left',direction:'ltr',fontFamily:'var(--font-serif)',fontSize:30,fontWeight:500,color:'var(--copper-deep)',letterSpacing:'0.04em'}}>{time}</div>
+      <div>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          {icon}
+          <div style={{fontFamily:'var(--font-serif)',fontSize:22,fontWeight:500,color:'var(--ink)'}}>{title}</div>
+        </div>
+        {sub && <div style={{marginTop:8,color:'var(--ink-soft)',fontWeight:400,fontSize:15,lineHeight:1.6}}>{sub}</div>}
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   VARIATION 1 — TEXT
+   ========================================================= */
+const TEXT = {
+  he: {
+    nameA:'שיראל', nameB:'הלל',
+    rsvpBtn:'אישור הגעה', scroll:'גלילה',
+    invitedBlessing:'קול ששון וקול שמחה\nקול חתן וקול כלה',
+    invitedSub:'בסיעתא דשמיא אנו שמחים להזמין אתכם\nלחופה ולשמחה של ילדינו',
+    groomName:'הלל', groomParents:'של אריק ויעל ברוס',
+    brideName:'שיראל', brideParents:'של סטיב וסנדרין אסוס',
+    detailsKicker:'פרטי האירוע',
+    dateLabel:'תאריך', placeLabel:'מקום', timeLabel:'שעה',
+    dateMain:'09.08.2026', dateSub:'יום ראשון · כ״ז באב',
+    placeMain:'גאיה', placeSub:'חדרה',
+    timeMain:'18:30', timeSub:'קבלת פנים · חופה ב-19:00',
+    countdownKicker:'הספירה לאחור',
+    days:'ימים', hours:'שעות', mins:'דקות', secs:'שניות',
+    scheduleKicker:'לוח זמנים',
+    sched:[
+      ['18:30','קבלת פנים','קוקטיילים, מטבל, מנגינות שקטות בגינה'],
+      ['19:00','חופה','הטקס יתקיים תחת חופה בגינה'],
+      ['20:30','ארוחה','ארוחה חגיגית עם תפריט שף וברכות'],
+      ['22:00','ריקודים','DJ Sarko עד השעות הקטנות'],
+    ],
+    mapKicker:'הוראות הגעה',
+    venueName:'גאיה', venueLine:'אולם אירועים גאיה\nחדרה, ישראל',
+    navWaze:'ניווט עם Waze', navGoogle:'ניווט עם Google Maps',
+    galleryKicker:'רגעים קטנים',
+    rsvpKicker:'אישור הגעה', rsvpDeadline:'נשמח לקבל אישור הגעה עד 01.07.2026',
+    fName:'שם מלא', fPhone:'טלפון', fAttend:'הגעה',
+    fYes:'אגיע\nבשמחה', fNo:'לא אוכל\nלהגיע',
+    fGuests:'מספר אורחים', fPref:'העדפה',
+    prefRegular:'רגיל', prefVegan:'טבעוני', prefKosher:'חלק מחפוד',
+    fNotes:'הערה לכלה ולחתן', fNotesPh:'ברכה, תזכורת, או סתם משהו חמוד...',
+    fSubmit:'שליחת אישור',
+    thanks:'תודה רבה!', thanksSub:'קיבלנו את האישור שלכם. נתראה ב־09.08.2026 ❦',
+    footerSign:'באהבה — נתראה בקרוב',
+  },
+  fr: {
+    nameA:'Shirel ', nameB:'Hillel',
+    rsvpBtn:'Confirmer ma présence', scroll:'Défiler',
+    invitedBlessing:'Houppa & Soirée',
+    invitedSub:'C’est avec une immense joie que nous\nvous invitons à la célébration du mariage\nde nos enfants',
+    groomName:'Hillel', groomParents:'Erik et Yaël Bross',
+    brideName:'Shirel', brideParents:'Steve et Sandrine Assous',
+    detailsKicker:'Les détails',
+    dateLabel:'Date', placeLabel:'Lieu', timeLabel:'Heure',
+    dateMain:'09.08.2026', dateSub:'Dimanche · 9 Août',
+    placeMain:'Gaïa', placeSub:'Hadera, Israël',
+    timeMain:'18:30', timeSub:'Cocktail · Houppa à 19h00',
+    countdownKicker:'Le compte à rebours',
+    days:'Jours', hours:'Heures', mins:'Minutes', secs:'Secondes',
+    scheduleKicker:'Le programme',
+    sched:[
+      ['18:30','Cocktail','Vin, amuse-bouches et musique douce dans le jardin'],
+      ['19:00','Cérémonie','La houppa aura lieu dans le jardin intérieur'],
+      ['20:30','Dîner','Dîner festif avec menu signé par le chef'],
+      ['22:00','Soirée dansante','DJ Sarko jusqu’au bout de la nuit'],
+    ],
+    mapKicker:'L’adresse',
+    venueName:'Gaïa', venueLine:'Salle de réception Gaïa\nHadera, Israël',
+    navWaze:'Itinéraire avec Waze', navGoogle:'Itinéraire avec Google Maps',
+    galleryKicker:'Souvenirs',
+    rsvpKicker:'RSVP', rsvpDeadline:'Merci de confirmer avant le 01.07.2026',
+    fName:'Nom complet', fPhone:'Téléphone', fAttend:'Présence',
+    fYes:'Oui,\navec plaisir', fNo:'Nous ne\npourrons pas',
+    fGuests:'Nombre d’invités', fPref:'Préférence',
+    prefRegular:'Standard', prefVegan:'Végan', prefKosher:'Casher Mehadrin',
+    fNotes:'Un mot doux pour les mariés', fNotesPh:'Un vœu, un souvenir, ou juste un mot...',
+    fSubmit:'Envoyer',
+    thanks:'Merci infiniment !', thanksSub:'Nous avons bien reçu votre réponse. À très bientôt — 09.08.2026',
+    footerSign:'à très bientôt...',
+  },
+};
+
+/* ── Flags ── */
+function FlagIL() {
+  return <svg viewBox="0 0 30 20" width="22" height="14" style={{display:'inline-block',verticalAlign:'middle',borderRadius:2,boxShadow:'0 0 0 1px rgba(0,0,0,0.15)'}}><rect width="30" height="20" fill="#fff"/><rect y="2" width="30" height="2.4" fill="#0038B8"/><rect y="15.6" width="30" height="2.4" fill="#0038B8"/><g fill="none" stroke="#0038B8" strokeWidth="0.7"><polygon points="15,7.5 16.7,10.5 13.3,10.5"/><polygon points="15,12.5 13.3,9.5 16.7,9.5"/></g></svg>;
+}
+function FlagFR() {
+  return <svg viewBox="0 0 30 20" width="22" height="14" style={{display:'inline-block',verticalAlign:'middle',borderRadius:2,boxShadow:'0 0 0 1px rgba(0,0,0,0.15)'}}><rect width="10" height="20" fill="#0055A4"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#EF4135"/></svg>;
+}
+
+/* ── Lang Switcher ── */
+function LangSwitcher({ lang, setLang }) {
+  return (
+    <div dir="ltr" style={{position:'fixed',top:18,right:18,display:'flex',gap:6,padding:4,background:'rgba(255,255,255,0.92)',backdropFilter:'blur(10px)',WebkitBackdropFilter:'blur(10px)',border:'1px solid var(--copper-light)',borderRadius:999,zIndex:100,boxShadow:'0 4px 16px rgba(46,70,50,0.12)'}}>
+      {[{code:'he',flag:<FlagIL/>,label:'HE'},{code:'fr',flag:<FlagFR/>,label:'FR'}].map(({code,flag,label}) => (
+        <button key={code} onClick={() => setLang(code)} style={{display:'inline-flex',alignItems:'center',gap:6,padding:'6px 12px',borderRadius:999,border:'none',cursor:'pointer',background:lang===code?'var(--copper)':'transparent',color:lang===code?'var(--cream)':'var(--ink)',fontFamily:'var(--font-serif)',fontSize:13,fontWeight:500,letterSpacing:'0.18em',transition:'all 0.3s'}}>
+          {flag}<span>{label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ── Nav Buttons ── */
+function NavButtons({ t }) {
+  const wazeUrl = 'https://waze.com/ul?q=Gaia%20Hadera&navigate=yes';
+  const gmapsUrl = 'https://www.google.com/maps/search/?api=1&query=Gaia+events+Hadera';
+  const s = {display:'inline-flex',alignItems:'center',gap:10,padding:'12px 20px',border:'1px solid var(--copper)',background:'var(--cream)',color:'var(--ink)',fontFamily:'var(--font-serif)',fontSize:14,fontWeight:500,letterSpacing:'0.1em',textDecoration:'none',transition:'all 0.3s',cursor:'pointer',borderRadius:15};
+  const hover = e => { e.currentTarget.style.background='var(--copper)'; e.currentTarget.style.color='var(--cream)'; };
+  const leave = e => { e.currentTarget.style.background='var(--cream)'; e.currentTarget.style.color='var(--ink)'; };
+  return (
+    <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap',marginTop:22}}>
+      <a href={wazeUrl} target="_blank" rel="noopener" style={s} onMouseEnter={hover} onMouseLeave={leave}>
+        <img src="assets/waze.svg" alt="Waze" width="22" height="22" style={{display:'block'}}/>
+        <span>{t.navWaze}</span>
+      </a>
+      <a href={gmapsUrl} target="_blank" rel="noopener" style={s} onMouseEnter={hover} onMouseLeave={leave}>
+        <img src="assets/google-map-icon.webp" alt="Google Maps" width="22" height="22" style={{display:'block'}}/>
+        <span>{t.navGoogle}</span>
+      </a>
+    </div>
+  );
+}
+
+/* ── Countdown ── */
+function CountdownLocalized({ t }) {
+  const cd = useCountdown(WEDDING_DATA.date);
+  const cells = [{v:cd.days,l:t.days},{v:cd.hours,l:t.hours},{v:cd.mins,l:t.mins},{v:cd.secs,l:t.secs}];
+  return (
+    <div className="countdown-grid" dir="ltr">
+      {cells.map((c,i) => (
+        <div key={i} className="countdown-cell">
+          <div className="countdown-num">{String(c.v).padStart(2,'0')}</div>
+          <div className="countdown-label">{c.l}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── RSVP ── */
+function RSVPLocalized({ t }) {
+  const [submitted, setSubmitted] = React.useState(false);
+  const [data, setData] = React.useState({name:'',phone:'',attending:'yes',guests:1,pref:'regular',notes:''});
+  const upd = k => e => setData(d => ({...d,[k]:e.target.value}));
+  if (submitted) {
+    return (
+      <div style={{textAlign:'center',padding:'40px 20px'}}>
+        <div style={{fontFamily:'var(--font-script-display)',fontSize:56,color:'var(--copper)',lineHeight:1}}>{t.thanks}</div>
+        <p style={{marginTop:18,color:'var(--ink-soft)',fontSize:15,fontWeight:300}}>{t.thanksSub}</p>
+      </div>
+    );
+  }
+  return (
+    <form onSubmit={e=>{e.preventDefault();setSubmitted(true);}} style={{maxWidth:480,margin:'0 auto'}}>
+      <div className="form-row"><input className="form-input" required value={data.name} onChange={upd('name')} placeholder={t.fName}/></div>
+      <div className="form-row"><input className="form-input" type="tel" required value={data.phone} onChange={upd('phone')} placeholder={t.fPhone}/></div>
+      <div className="form-row">
+        <label className="form-label">{t.fAttend}</label>
+        <div className="form-radio-group">
+          <label className="form-radio"><input type="radio" name="att" value="yes" checked={data.attending==='yes'} onChange={upd('attending')} required/><span>{t.fYes}</span></label>
+          <label className="form-radio"><input type="radio" name="att" value="no" checked={data.attending==='no'} onChange={upd('attending')} required/><span>{t.fNo}</span></label>
+        </div>
+      </div>
+      <div className="form-row" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+        <div><label className="form-label">{t.fGuests}</label><input className="form-input" type="number" min="1" max="10" required value={data.guests} onChange={upd('guests')}/></div>
+        <div><label className="form-label">{t.fPref}</label>
+          <select className="form-select" value={data.pref} onChange={upd('pref')}>
+            <option value="regular">{t.prefRegular}</option>
+            <option value="vegan">{t.prefVegan}</option>
+            <option value="kosher">{t.prefKosher}</option>
+          </select>
+        </div>
+      </div>
+      <div className="form-row"><label className="form-label">{t.fNotes}</label><textarea className="form-textarea" value={data.notes} onChange={upd('notes')} placeholder={t.fNotesPh} style={{borderRadius:15}}/></div>
+      <div style={{textAlign:'center',marginTop:28}}><button type="submit" className="btn btn-solid" style={{borderRadius:15}}>{t.fSubmit}</button></div>
+    </form>
+  );
+}
+
+/* =========================================================
+   MAIN COMPONENT
+   ========================================================= */
+function App() {
+  const [lang, setLang] = React.useState('he');
+  const t = TEXT[lang];
+  const dir = lang === 'he' ? 'rtl' : 'ltr';
+  const fontSerif = lang === 'he' ? 'var(--font-serif)' : 'var(--font-latin-serif)';
+  const fontStyle = lang === 'he' ? 'normal' : 'italic';
+
+  useReveal();
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', dir);
+  }, [lang, dir]);
+
+  const icons = [Ic.glass, Ic.arch, Ic.plate, Ic.music];
+
+  return (
+    <div dir={dir} style={{background:'var(--cream)',minHeight:'100%',position:'relative',overflow:'visible'}}>
+      <SparkleField count={14}/>
+      <LangSwitcher lang={lang} setLang={setLang}/>
+
+      {/* ── HERO ── */}
+      <section style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'80px 32px 60px',position:'relative',textAlign:'center'}}>
+        <div className="reveal delay-2" style={{fontFamily:lang==='he'?'var(--font-serif)':'var(--font-script-display)',fontSize:lang==='he'?'clamp(64px,13vw,150px)':'clamp(58px,11vw,130px)',lineHeight:1.3,fontWeight:400,letterSpacing:'0.02em',margin:'6px 0',overflow:'visible'}}>
+          <span className="gold-foil">{t.nameA}</span>
+          <span style={{display:'inline-block',margin:'0 24px',fontFamily:'var(--font-script-display)',fontSize:'0.55em',color:'var(--copper)',verticalAlign:'middle'}}>&</span>
+          <span className="gold-foil">{t.nameB}</span>
+        </div>
+        <div className="reveal delay-4" style={{marginTop:36,width:'100%',maxWidth:480}}><OrnamentBotanic/></div>
+        <div className="reveal delay-4" dir="ltr" style={{marginTop:28,fontFamily:'var(--font-serif)',fontSize:'clamp(18px,2.2vw,22px)',fontWeight:500,color:'var(--copper-deep)',letterSpacing:'0.18em'}}>
+          <bdi>09</bdi> . <bdi>08</bdi> . <bdi>2026</bdi>
+        </div>
+        <div className="reveal delay-4" style={{marginTop:8,fontFamily:fontSerif,fontStyle:fontStyle,fontSize:'clamp(16px,1.8vw,19px)',color:'var(--ink-soft)',fontWeight:400}}>
+          {t.dateSub} · {t.placeMain}, {t.placeSub}
+        </div>
+        <div className="reveal delay-5" style={{marginTop:56}}>
+          <a href="#rsvp" className="btn btn-outline" style={{borderRadius:15}}>{t.rsvpBtn}</a>
+        </div>
+        <div style={{position:'absolute',bottom:24,left:'50%',transform:'translateX(-50%)',fontFamily:'var(--font-serif)',fontSize:13,letterSpacing:'0.4em',color:'var(--copper-deep)',fontWeight:500}}>
+          ↓ &nbsp; {t.scroll} &nbsp; ↓
+        </div>
+      </section>
+
+      {/* ── INVITATION CARD ── */}
+      <section style={{padding:'120px 32px',background:'var(--cream-deep)'}}>
+        <div className="reveal" style={{maxWidth:640,margin:'0 auto',textAlign:'center',padding:'60px 48px 70px',background:'var(--cream)',border:'1px solid var(--copper)',position:'relative'}}>
+          <div style={{position:'absolute',top:-1,left:-1,right:-1,bottom:-1,border:'1px solid var(--copper)',transform:'translate(8px,8px)',pointerEvents:'none',opacity:0.3}}/>
+          <OrnamentMonogram a="ש" b="ה"/>
+          <p style={{marginTop:24,fontFamily:'var(--font-serif)',fontSize:'clamp(18px,2vw,24px)',fontWeight:400,lineHeight:1.7,color:'var(--copper-deep)',whiteSpace:'pre-line'}}>{t.invitedBlessing}</p>
+          <div style={{margin:'28px auto',width:'55%'}}><OrnamentSimple/></div>
+          <p style={{fontFamily:fontSerif,fontStyle:fontStyle,fontSize:'clamp(15px,1.6vw,18px)',fontWeight:400,lineHeight:1.8,color:'var(--ink-soft)',maxWidth:460,margin:'0 auto',whiteSpace:'pre-line'}}>{t.invitedSub}</p>
+          <div style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:20,alignItems:'center',marginTop:40}}>
+            <div style={{textAlign:'center'}}>
+              <div style={{fontFamily:'var(--font-script-display)',fontSize:'clamp(38px,5vw,56px)',color:'var(--copper-deep)',lineHeight:1}}>{t.groomName}</div>
+              <div style={{marginTop:10,fontFamily:'var(--font-serif)',fontSize:14,fontWeight:400,color:'var(--ink-soft)',lineHeight:1.5}}>{t.groomParents}</div>
+            </div>
+            <div style={{fontFamily:'var(--font-script-display)',fontSize:32,color:'var(--copper)'}}>&</div>
+            <div style={{textAlign:'center'}}>
+              <div style={{fontFamily:'var(--font-script-display)',fontSize:'clamp(38px,5vw,56px)',color:'var(--copper-deep)',lineHeight:1}}>{t.brideName}</div>
+              <div style={{marginTop:10,fontFamily:'var(--font-serif)',fontSize:14,fontWeight:400,color:'var(--ink-soft)',lineHeight:1.5}}>{t.brideParents}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── DETAILS GRID ── */}
+      <section style={{padding:'120px 32px'}}>
+        <div className="reveal" style={{textAlign:'center',marginBottom:70}}>
+          <h2 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(30px,4vw,42px)',fontWeight:500,color:'var(--ink)'}}>{t.detailsKicker}</h2>
+        </div>
+        <div className="invite-grid-3" style={{maxWidth:880,margin:'0 auto',display:'grid',gridTemplateColumns:'repeat(3,1fr)'}}>
+          {[{label:t.dateLabel,main:t.dateMain,sub:t.dateSub,dir:'ltr'},{label:t.placeLabel,main:t.placeMain,sub:t.placeSub},{label:t.timeLabel,main:t.timeMain,sub:t.timeSub,dir:'ltr'}].map((d,i) => (
+            <div key={i} className={`reveal delay-${i+1}`} style={{textAlign:'center',padding:'40px 20px',borderInlineEnd:i<2?'1px solid var(--line)':'none'}}>
+              <div style={{fontSize:13,letterSpacing:'0.36em',color:'var(--copper-deep)',textTransform:'uppercase',fontWeight:500,fontFamily:'var(--font-serif)'}}>{d.label}</div>
+              <div style={{fontFamily:'var(--font-serif)',fontSize:'clamp(28px,4vw,34px)',fontWeight:400,margin:'20px 0 10px',color:'var(--ink)'}} dir={d.dir||''}>{d.main}</div>
+              <div style={{fontSize:15,color:'var(--ink-soft)',fontWeight:400}}>{d.sub}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── COUNTDOWN ── */}
+      <section style={{padding:'90px 32px 110px',background:'var(--cream-deep)',textAlign:'center'}}>
+        <div className="reveal">
+          <h3 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(26px,3vw,34px)',fontWeight:500,marginBottom:36,color:'var(--ink)'}}>{t.countdownKicker}</h3>
+          <CountdownLocalized t={t}/>
+        </div>
+      </section>
+
+      {/* ── SCHEDULE ── */}
+      <section style={{padding:'120px 32px'}}>
+        <div className="reveal" style={{textAlign:'center',marginBottom:50}}>
+          <h2 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(30px,4vw,42px)',fontWeight:500,color:'var(--ink)'}}>{t.scheduleKicker}</h2>
+        </div>
+        <div className="reveal" style={{maxWidth:600,margin:'0 auto'}}>
+          {t.sched.map((r,i) => <ScheduleRow key={i} time={r[0]} title={r[1]} sub={r[2]} icon={icons[i]} last={i===t.sched.length-1}/>)}
+        </div>
+      </section>
+
+      {/* ── MAP ── */}
+      <section style={{padding:'60px 32px 120px'}}>
+        <div className="reveal" style={{textAlign:'center',marginBottom:40}}>
+          <h3 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(28px,3.4vw,36px)',fontWeight:500,color:'var(--ink)'}}>{t.mapKicker}</h3>
+        </div>
+        <div className="reveal" style={{maxWidth:460,margin:'0 auto',border:'1px solid var(--line)',background:'rgba(255,255,255,0.5)',padding:'32px 28px',textAlign:'center',borderRadius:15}}>
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="var(--copper)" strokeWidth="1.2" style={{margin:'0 auto 14px',display:'block'}}>
+            <path d="M24 6 C 16 6, 10 12, 10 20 C 10 30, 24 42, 24 42 C 24 42, 38 30, 38 20 C 38 12, 32 6, 24 6 Z"/>
+            <circle cx="24" cy="20" r="4"/>
+          </svg>
+          <div style={{fontFamily:'var(--font-serif)',fontSize:26,fontWeight:500,color:'var(--ink)'}}>{t.venueName}</div>
+          <div style={{marginTop:14,fontSize:16,color:'var(--ink-soft)',fontWeight:400,lineHeight:1.7,whiteSpace:'pre-line'}}>{t.venueLine}</div>
+          <NavButtons t={t}/>
+        </div>
+      </section>
+
+      {/* ── GALLERY ── */}
+      <section style={{padding:'120px 32px',background:'var(--cream-deep)'}}>
+        <div className="reveal" style={{textAlign:'center',marginBottom:60}}>
+          <h2 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(28px,3.4vw,36px)',fontWeight:500,color:'var(--ink)'}}>{t.galleryKicker}</h2>
+        </div>
+        <div className="reveal" style={{maxWidth:980,margin:'0 auto',display:'grid',gridTemplateColumns:'repeat(3,1fr)',gridTemplateRows:'auto auto',gap:16}}>
+          <div style={{gridRow:'span 2'}}><PhotoPlaceholder ratio="3/4" label="01 · PORTRAIT"/></div>
+          <div><PhotoPlaceholder ratio="4/3" label="02 · TOGETHER"/></div>
+          <div><PhotoPlaceholder ratio="4/3" label="03 · MOMENT"/></div>
+          <div><PhotoPlaceholder ratio="4/3" label="04 · DETAIL"/></div>
+          <div><PhotoPlaceholder ratio="4/3" label="05 · SUNSET"/></div>
+        </div>
+      </section>
+
+      {/* ── RSVP ── */}
+      <section id="rsvp" style={{padding:'120px 32px'}}>
+        <div className="reveal" style={{textAlign:'center',marginBottom:50}}>
+          <h2 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(30px,4vw,42px)',fontWeight:500,color:'var(--ink)'}}>{t.rsvpKicker}</h2>
+          <p style={{marginTop:14,color:'var(--ink-soft)',fontWeight:400,fontSize:16}}>{t.rsvpDeadline}</p>
+          <div style={{marginTop:28,maxWidth:200,margin:'28px auto 0'}}><OrnamentSimple/></div>
+        </div>
+        <div className="reveal"><RSVPLocalized t={t}/></div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{padding:'60px 32px 80px',textAlign:'center',background:'var(--cream-deep)'}}>
+        <div style={{fontFamily:'var(--font-script-display)',fontSize:56,color:'var(--copper)',lineHeight:1}}>Shirel &amp; Hillel</div>
+        <div dir="ltr" style={{marginTop:12,fontFamily:'var(--font-serif)',fontSize:18,fontWeight:300,letterSpacing:'0.18em'}}><bdi>09</bdi> . <bdi>08</bdi> . <bdi>2026</bdi></div>
+        <div style={{marginTop:30,maxWidth:320,margin:'30px auto 0'}}><OrnamentSimple/></div>
+        <div style={{marginTop:24,fontFamily:fontSerif,fontStyle:fontStyle,fontSize:14,color:'var(--ink-soft)'}}>{t.footerSign}</div>
+      </footer>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
 </body>
 </html>
