@@ -1,0 +1,32 @@
+/* Theme: Pearl White & Eucalyptus — לבן-פנינה עם אקליפטוס ירוק עמוק */
+:root {
+  --cream: #FCFAF6;
+  --cream-deep: #F2EEE5;
+  --nude: #DDE3D5;
+  --nude-deep: #A8B59A;
+  --copper: #4F6B52;
+  --copper-deep: #2E4632;
+  --copper-light: #8FA68F;
+  --ink: #1F2A22;
+  --ink-soft: #4A574E;
+  --line: rgba(31,42,34,0.16);
+}
+.gold-foil {
+  background: linear-gradient(
+    100deg,
+    #2E4632 0%,
+    #466349 25%,
+    #6B855F 45%,
+    #87A07A 50%,
+    #6B855F 55%,
+    #466349 75%,
+    #2E4632 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  padding: 0.25em 0.2em !important;
+  margin: -0.25em -0.2em !important;
+  display: inline-block !important;
+}

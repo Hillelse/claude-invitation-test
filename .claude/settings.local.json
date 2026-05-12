@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Copy-Item *)",
+      "Bash(start \"\" \"http://localhost:3000\")",
+      "Bash(python -m http.server 3000)",
+      "Bash(git add *)",
+      "Bash(findstr -i \"zip\\\\|Wedding\\\\|claude\\\\|mariage\")",
+      "Bash(dir C:\\\\Users\\\\Unknown\\\\Desktop\\\\calude test project *)"
+    ]
+  }
+}

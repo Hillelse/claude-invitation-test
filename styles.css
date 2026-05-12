@@ -1,0 +1,385 @@
+/* ============================================
+   Shirel & Hillel — Wedding Invitation Styles
+   Palette: cream, nude, antique copper
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@200;300;400;500;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Allura&family=Great+Vibes&display=swap');
+
+:root {
+  --cream: #FAF6EF;
+  --cream-deep: #F3ECDF;
+  --nude: #E8DDC9;
+  --nude-deep: #D4C2A5;
+  --copper: #B08D5C;
+  --copper-deep: #8C6E42;
+  --copper-light: #D4B68A;
+  --ink: #2A2520;
+  --ink-soft: #5A4F44;
+  --line: rgba(42,37,32,0.18);
+
+  --font-serif: 'Frank Ruhl Libre', 'Cormorant Garamond', serif;
+  --font-body: 'Heebo', sans-serif;
+  --font-script-fr: 'Allura', cursive;
+  --font-script-display: 'Great Vibes', cursive;
+  --font-latin-serif: 'Cormorant Garamond', serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--cream);
+  direction: rtl;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   Shimmer / Gold Foil
+   ============================================ */
+.gold-foil {
+  background: linear-gradient(
+    100deg,
+    #6B4F2E 0%,
+    #8C6E42 25%,
+    #B08D5C 45%,
+    #C99F6A 50%,
+    #B08D5C 55%,
+    #8C6E42 75%,
+    #6B4F2E 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 6s ease-in-out infinite;
+  padding: 0.25em 0.2em;
+  margin: -0.25em -0.2em;
+  display: inline-block;
+}
+
+@keyframes shimmer {
+  0%, 100% { background-position: 100% 50%; }
+  50% { background-position: 0% 50%; }
+}
+
+.copper-line {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--copper) 20%,
+    var(--copper-light) 50%,
+    var(--copper) 80%,
+    transparent 100%
+  );
+}
+
+/* ============================================
+   Fade-in on scroll (reveal)
+   ============================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 1.4s cubic-bezier(0.22,0.61,0.36,1), transform 1.4s cubic-bezier(0.22,0.61,0.36,1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal.delay-1 { transition-delay: 0.15s; }
+.reveal.delay-2 { transition-delay: 0.3s; }
+.reveal.delay-3 { transition-delay: 0.45s; }
+.reveal.delay-4 { transition-delay: 0.6s; }
+.reveal.delay-5 { transition-delay: 0.75s; }
+
+/* ============================================
+   Floating petals / leaves
+   ============================================ */
+.petal-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.petal {
+  position: absolute;
+  top: -10vh;
+  opacity: 0;
+  animation: drift linear infinite;
+}
+@keyframes drift {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% { opacity: 0.55; }
+  90% { opacity: 0.45; }
+  100% {
+    transform: translateY(120vh) translateX(var(--drift, 80px)) rotate(540deg);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   Sparkle dots
+   ============================================ */
+.sparkle {
+  position: absolute;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #F4DCA8 0%, var(--copper) 50%, transparent 70%);
+  pointer-events: none;
+  animation: sparkle-pulse 3s ease-in-out infinite;
+}
+@keyframes sparkle-pulse {
+  0%, 100% { opacity: 0; transform: scale(0.6); }
+  50% { opacity: 1; transform: scale(1.4); }
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 36px;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.4s cubic-bezier(0.22,0.61,0.36,1);
+  position: relative;
+  overflow: hidden;
+}
+.btn-outline {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--copper);
+}
+.btn-outline:hover {
+  background: var(--copper);
+  color: var(--cream);
+  letter-spacing: 0.18em;
+}
+.btn-solid {
+  background: var(--copper);
+  color: var(--cream);
+}
+.btn-solid:hover {
+  background: var(--copper-deep);
+  letter-spacing: 0.18em;
+}
+
+/* ============================================
+   Form
+   ============================================ */
+.form-row { margin-bottom: 22px; }
+.form-label {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  padding: 14px 2px;
+  font-family: var(--font-body);
+  font-size: 17px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.3s;
+  font-weight: 400;
+}
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--ink-soft);
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+.form-textarea {
+  border: 1px solid var(--line);
+  padding: 12px 14px;
+  resize: vertical;
+  min-height: 80px;
+}
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--copper);
+}
+.form-radio-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 10px;
+}
+.form-radio {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  min-height: 96px;
+  padding: 18px 14px;
+  background: #FBF8F1;
+  border: 1px solid rgba(176, 141, 92, 0.32);
+  border-radius: 18px;
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.35;
+  transition: all 0.25s ease;
+  white-space: pre-line;
+}
+.form-radio:hover {
+  border-color: var(--copper);
+  background: #F6F0E2;
+}
+.form-radio input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.form-radio:has(input:checked) {
+  border-color: var(--copper-deep);
+  border-width: 2px;
+  background: #F1E8D2;
+  box-shadow: 0 4px 14px rgba(107, 79, 46, 0.12);
+  padding: 17px 13px;
+}
+
+/* ============================================
+   Ornament (svg-driven flourishes)
+   ============================================ */
+.ornament-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  color: var(--copper);
+}
+.ornament-divider .line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--copper), transparent);
+}
+.ornament-divider svg { display: block; }
+
+/* ============================================
+   Countdown
+   ============================================ */
+.countdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+.countdown-cell {
+  text-align: center;
+  padding: 18px 8px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.4);
+  backdrop-filter: blur(2px);
+}
+.countdown-num {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: clamp(36px, 5vw, 56px);
+  line-height: 1;
+  color: var(--copper-deep);
+  font-variant-numeric: tabular-nums;
+}
+.countdown-label {
+  margin-top: 10px;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-weight: 500;
+  font-family: var(--font-serif);
+}
+
+/* ============================================
+   Scrollbar (subtle)
+   ============================================ */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--cream-deep); }
+::-webkit-scrollbar-thumb { background: var(--nude-deep); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--copper); }
+
+/* ============================================
+   Responsive — tablet and mobile
+   ============================================ */
+@media (max-width: 900px) {
+  .countdown-num { font-size: clamp(28px, 8vw, 44px) !important; }
+}
+@media (max-width: 720px) {
+  section.invite-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+  section.invite-grid-3 > * {
+    border-inline-end: none !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  section.invite-grid-3 > *:last-child {
+    border-bottom: none !important;
+  }
+}
+@media (max-width: 600px) {
+  .countdown-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    max-width: 320px !important;
+  }
+  .countdown-cell { padding: 14px 6px !important; }
+  .countdown-label { font-size: 10px !important; letter-spacing: 0.16em !important; }
+  .form-radio-group { gap: 10px !important; }
+  .form-radio { min-height: 80px !important; font-size: 15px !important; padding: 14px 10px !important; }
+  .btn { padding: 14px 24px !important; font-size: 14px !important; }
+}
+
+/* ============================================
+   Placeholder image
+   ============================================ */
+.photo-placeholder {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      var(--nude) 0px,
+      var(--nude) 2px,
+      var(--cream-deep) 2px,
+      var(--cream-deep) 14px
+    );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+}
