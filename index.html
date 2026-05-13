@@ -33,10 +33,16 @@ html,body{font-family:var(--font-body);color:var(--ink);background:var(--cream);
 
 /* ── Gold foil ── */
 .gold-foil{
-  background:linear-gradient(110deg,#2E4632 0%,#466349 20%,#6B855F 38%,#9FBD95 50%,#6B855F 62%,#466349 80%,#2E4632 100%);
+  background:linear-gradient(110deg,#2E4632 0%,#3F5A3A 20%,#5A7A56 40%,#8FA68F 50%,#5A7A56 60%,#3F5A3A 80%,#2E4632 100%);
   background-size:220% 100%;-webkit-background-clip:text;background-clip:text;
-  -webkit-text-fill-color:transparent;animation:shimmer 8s ease-in-out infinite;
-  padding:0.25em 0.15em;margin:-0.25em -0.15em;display:inline-block;
+  -webkit-text-fill-color:transparent;animation:shimmer 7s ease-in-out infinite;
+  padding:0.4em 0.5em;margin:-0.4em -0.5em;display:inline-block;
+  letter-spacing:normal;
+}
+.gold-foil-amp{
+  -webkit-text-fill-color:var(--copper);
+  -webkit-background-clip:initial;background-clip:initial;
+  background:none;animation:none;
 }
 @keyframes shimmer{0%,100%{background-position:100% 50%;}50%{background-position:0% 50%;}}
 
@@ -186,7 +192,7 @@ const TEXT = {
     footerSign:'באהבה — נתראה בקרוב',
   },
   fr: {
-    nameA:'Shirel ', nameB:'Hillel',
+    nameA:'Shirel', nameB:'Hillel',
     rsvpBtn:'Confirmer ma présence', scroll:'Défiler',
     invitedBlessing:'Houppa & Soirée',
     invitedSub:"C'est avec une immense joie que nous\nvous invitons à la célébration du mariage\nde nos enfants",
@@ -385,10 +391,12 @@ function Hero({ t, lang }) {
       {/* Radial bg glow */}
       <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse 80% 55% at 50% 40%,rgba(143,166,143,0.12) 0%,transparent 70%)',pointerEvents:'none'}}/>
 
-      <div ref={namesRef} data-hero-item style={{fontSize:nameSize,lineHeight:1.25,fontWeight:400,letterSpacing:'0.02em',margin:'6px 0',position:'relative',zIndex:1}}>
-        <span className="gold-foil" style={{fontFamily:fontSerif}}>{t.nameA}</span>
-        <span style={{display:'inline-block',margin:'0 28px',fontFamily:"'Great Vibes',cursive",fontSize:'0.52em',color:'var(--copper)',verticalAlign:'middle'}}>&</span>
-        <span className="gold-foil" style={{fontFamily:fontSerif}}>{t.nameB}</span>
+      <div ref={namesRef} data-hero-item style={{fontSize:nameSize,lineHeight:1.4,fontWeight:400,letterSpacing:lang==='he'?'0.02em':'0',margin:'6px 0',position:'relative',zIndex:1}}>
+        <span className="gold-foil" style={{fontFamily:fontSerif}}>
+          {t.nameA}
+          <span className="gold-foil-amp" style={{display:'inline-block',margin:'0 28px',fontFamily:"'Great Vibes',cursive",fontSize:'0.52em',verticalAlign:'middle'}}>&</span>
+          {t.nameB}
+        </span>
       </div>
 
       <div data-hero-item style={{marginTop:40,width:'100%',maxWidth:500,position:'relative',zIndex:1}}>
