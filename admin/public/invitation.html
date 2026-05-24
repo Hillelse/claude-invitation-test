@@ -56,9 +56,6 @@ html,body{font-family:var(--font-body);color:var(--ink);background:var(--cream);
 /* ── Reveal — hidden until Motion animates in ── */
 .reveal{opacity:0;transform:translateY(24px);}
 
-/* ── Sparkles ── */
-.sparkle{position:fixed;border-radius:50%;background:radial-gradient(circle,rgba(184,212,176,0.9) 0%,var(--copper) 50%,transparent 70%);pointer-events:none;animation:sparkle-pulse 3s ease-in-out infinite;}
-@keyframes sparkle-pulse{0%,100%{opacity:0;transform:scale(0.4);}50%{opacity:0.7;transform:scale(1.4);}}
 
 /* ── Buttons ── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:16px 40px;font-family:var(--font-serif);font-size:16px;font-weight:400;letter-spacing:0.14em;text-decoration:none;cursor:pointer;border:none;transition:background 0.4s var(--ease-luxury),color 0.4s,letter-spacing 0.4s;border-radius:999px;will-change:transform;}
@@ -265,14 +262,18 @@ function useMotionSetup() {
     };
     window.addEventListener('scroll', onScroll, { passive: true });
 
-    /* .reveal elements — native IO */
+    /* .reveal elements — re-triggers on scroll back */
     const revIO = new IntersectionObserver(entries => {
       entries.forEach(e => {
-        if (!e.isIntersecting) return;
-        e.target.style.transition = 'opacity 1.1s cubic-bezier(0.22,0.61,0.36,1), transform 1.1s cubic-bezier(0.22,0.61,0.36,1)';
-        e.target.style.opacity = '1';
-        e.target.style.transform = 'translateY(0)';
-        revIO.unobserve(e.target);
+        if (e.isIntersecting) {
+          e.target.style.transition = 'opacity 1.1s cubic-bezier(0.22,0.61,0.36,1), transform 1.1s cubic-bezier(0.22,0.61,0.36,1)';
+          e.target.style.opacity = '1';
+          e.target.style.transform = 'translateY(0)';
+        } else {
+          e.target.style.transition = 'none';
+          e.target.style.opacity = '0';
+          e.target.style.transform = 'translateY(24px)';
+        }
       });
     }, { threshold: 0.1 });
     document.querySelectorAll('.reveal').forEach(el => revIO.observe(el));
@@ -280,15 +281,21 @@ function useMotionSetup() {
     /* Details grid stagger */
     const detIO = new IntersectionObserver(entries => {
       entries.forEach(e => {
-        if (!e.isIntersecting) return;
-        e.target.querySelectorAll('.detail-cell').forEach((el, i) => {
-          setTimeout(() => {
-            el.style.transition = 'opacity 0.9s cubic-bezier(0.16,1,0.3,1), transform 0.9s cubic-bezier(0.16,1,0.3,1)';
-            el.style.opacity = '1';
-            el.style.transform = 'translateY(0)';
-          }, i * 130);
-        });
-        detIO.unobserve(e.target);
+        if (e.isIntersecting) {
+          e.target.querySelectorAll('.detail-cell').forEach((el, i) => {
+            setTimeout(() => {
+              el.style.transition = 'opacity 0.9s cubic-bezier(0.16,1,0.3,1), transform 0.9s cubic-bezier(0.16,1,0.3,1)';
+              el.style.opacity = '1';
+              el.style.transform = 'translateY(0)';
+            }, i * 130);
+          });
+        } else {
+          e.target.querySelectorAll('.detail-cell').forEach(el => {
+            el.style.transition = 'none';
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(24px)';
+          });
+        }
       });
     }, { threshold: 0.15 });
     const dg = document.querySelector('.details-grid');
@@ -297,15 +304,21 @@ function useMotionSetup() {
     /* Schedule rows stagger */
     const schedIO = new IntersectionObserver(entries => {
       entries.forEach(e => {
-        if (!e.isIntersecting) return;
-        e.target.querySelectorAll('.sched-wrap').forEach((el, i) => {
-          setTimeout(() => {
-            el.style.transition = 'opacity 0.9s cubic-bezier(0.16,1,0.3,1), transform 0.9s cubic-bezier(0.16,1,0.3,1)';
-            el.style.opacity = '1';
-            el.style.transform = 'translateX(0)';
-          }, i * 120);
-        });
-        schedIO.unobserve(e.target);
+        if (e.isIntersecting) {
+          e.target.querySelectorAll('.sched-wrap').forEach((el, i) => {
+            setTimeout(() => {
+              el.style.transition = 'opacity 0.9s cubic-bezier(0.16,1,0.3,1), transform 0.9s cubic-bezier(0.16,1,0.3,1)';
+              el.style.opacity = '1';
+              el.style.transform = 'translateX(0)';
+            }, i * 120);
+          });
+        } else {
+          e.target.querySelectorAll('.sched-wrap').forEach(el => {
+            el.style.transition = 'none';
+            el.style.opacity = '0';
+            el.style.transform = 'translateX(24px)';
+          });
+        }
       });
     }, { threshold: 0.05 });
     const sl = document.getElementById('sched-list');
@@ -314,15 +327,21 @@ function useMotionSetup() {
     /* Gallery stagger */
     const galIO = new IntersectionObserver(entries => {
       entries.forEach(e => {
-        if (!e.isIntersecting) return;
-        e.target.querySelectorAll('.gallery-wrap').forEach((el, i) => {
-          setTimeout(() => {
-            el.style.transition = 'opacity 0.85s cubic-bezier(0.16,1,0.3,1), transform 0.85s cubic-bezier(0.16,1,0.3,1)';
-            el.style.opacity = '1';
-            el.style.transform = 'scale(1)';
-          }, i * 90);
-        });
-        galIO.unobserve(e.target);
+        if (e.isIntersecting) {
+          e.target.querySelectorAll('.gallery-wrap').forEach((el, i) => {
+            setTimeout(() => {
+              el.style.transition = 'opacity 0.85s cubic-bezier(0.16,1,0.3,1), transform 0.85s cubic-bezier(0.16,1,0.3,1)';
+              el.style.opacity = '1';
+              el.style.transform = 'scale(1)';
+            }, i * 90);
+          });
+        } else {
+          e.target.querySelectorAll('.gallery-wrap').forEach(el => {
+            el.style.transition = 'none';
+            el.style.opacity = '0';
+            el.style.transform = 'scale(0.93)';
+          });
+        }
       });
     }, { threshold: 0.05 });
     const gg = document.querySelector('.gallery-grid');
@@ -331,15 +350,21 @@ function useMotionSetup() {
     /* Countdown cells stagger */
     const cdIO = new IntersectionObserver(entries => {
       entries.forEach(e => {
-        if (!e.isIntersecting) return;
-        e.target.querySelectorAll('.cd-cell').forEach((el, i) => {
-          setTimeout(() => {
-            el.style.transition = 'opacity 0.75s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1)';
-            el.style.opacity = '1';
-            el.style.transform = 'translateY(0) scale(1)';
-          }, i * 90);
-        });
-        cdIO.unobserve(e.target);
+        if (e.isIntersecting) {
+          e.target.querySelectorAll('.cd-cell').forEach((el, i) => {
+            setTimeout(() => {
+              el.style.transition = 'opacity 0.75s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1)';
+              el.style.opacity = '1';
+              el.style.transform = 'translateY(0) scale(1)';
+            }, i * 90);
+          });
+        } else {
+          e.target.querySelectorAll('.cd-cell').forEach(el => {
+            el.style.transition = 'none';
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px) scale(0.92)';
+          });
+        }
       });
     }, { threshold: 0.2 });
     const cdg = document.querySelector('.countdown-grid');
@@ -499,13 +524,6 @@ function OrnamentMonogram({ a='ש', b='ה' }) {
   );
 }
 
-function SparkleField({ count=16 }) {
-  const items = React.useMemo(() => Array.from({length:count}).map((_,i) => ({
-    id:i, top:Math.random()*100, left:Math.random()*100,
-    delay:Math.random()*4, dur:2.5+Math.random()*3.5, size:2.5+Math.random()*4
-  })), [count]);
-  return <>{items.map(s => <div key={s.id} className="sparkle" style={{top:s.top+'%',left:s.left+'%',width:s.size,height:s.size,animationDelay:s.delay+'s',animationDuration:s.dur+'s'}}/>)}</>;
-}
 
 function FlagIL() {
   return <svg viewBox="0 0 30 20" width="22" height="14" style={{display:'inline-block',verticalAlign:'middle',borderRadius:2,boxShadow:'0 0 0 1px rgba(0,0,0,0.12)'}}><rect width="30" height="20" fill="#fff"/><rect y="2" width="30" height="2.4" fill="#0038B8"/><rect y="15.6" width="30" height="2.4" fill="#0038B8"/><g fill="none" stroke="#0038B8" strokeWidth="0.7"><polygon points="15,7.5 16.7,10.5 13.3,10.5"/><polygon points="15,12.5 13.3,9.5 16.7,9.5"/></g></svg>;
@@ -699,7 +717,6 @@ function App() {
 
   return (
     <div dir={dir} style={{background:'var(--cream)',minHeight:'100%',position:'relative'}}>
-      <SparkleField count={16}/>
       <LangSwitcher lang={lang} setLang={setLang}/>
 
       {/* ── HERO ── */}
