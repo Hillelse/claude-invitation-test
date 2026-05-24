@@ -595,14 +595,26 @@ function RSVPLocalized({ t }) {
       return;
     }
     setLoading(true);
-    const { error } = await window._sb.from('rsvp').insert([{
-      name: data.name,
-      phone: data.phone,
-      attending: data.attending,
-      guests: Number(data.guests),
-      pref: data.pref,
-      notes: data.notes,
-    }]);
+    const newStatus = data.attending === 'yes' ? 'Confirmed' : 'Declined';
+    const { data: existing } = await window._sb.from('rsvp').select('id, name').eq('phone', rawPhone).maybeSingle();
+    let error;
+    if (existing) {
+      const existingName = existing.name.trim();
+      const typedName = data.name.trim();
+      const mergedName = typedName && typedName.toLowerCase() !== existingName.toLowerCase()
+        ? `${existingName} (${typedName})` : existingName;
+      ({ error } = await window._sb.from('rsvp').update({
+        name: mergedName, attending: data.attending,
+        guests: Number(data.guests), pref: data.pref,
+        notes: data.notes || null, status: newStatus,
+      }).eq('id', existing.id));
+    } else {
+      ({ error } = await window._sb.from('rsvp').insert([{
+        name: data.name, phone: rawPhone, attending: data.attending,
+        guests: Number(data.guests), pref: data.pref,
+        notes: data.notes || null, status: newStatus,
+      }]));
+    }
     setLoading(false);
     if (error) { alert(error.message); return; }
     const exit = animate

@@ -10,7 +10,7 @@ type Props = {
   toast: (text: string, type?: 'success' | 'error') => void;
 };
 
-const EMPTY = { name: '', phone: '', attending: 'yes', guests: 1, pref: 'regular', status: 'Confirmed', notes: '', internal_notes: '' };
+const EMPTY = { name: '', phone: '', attending: 'pending', guests: 1, pref: 'regular', status: 'Pending', notes: '', internal_notes: '' };
 
 export default function AddGuestModal({ onClose, onAdded, toast }: Props) {
   const { t } = useLang();
@@ -70,6 +70,7 @@ export default function AddGuestModal({ onClose, onAdded, toast }: Props) {
             <div>
               <label style={lbl}>{t.fieldAttending}</label>
               <select value={form.attending} onChange={upd('attending')} style={inp}>
+                <option value="pending">{t.filterPending}</option>
                 <option value="yes">{t.filterYes}</option>
                 <option value="no">{t.filterNo}</option>
               </select>
