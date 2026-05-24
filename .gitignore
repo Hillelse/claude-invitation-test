@@ -1,0 +1,5 @@
+.DS_Store
+*.pem
+*.original.md
+prompt.md
+.claude/settings.local.json

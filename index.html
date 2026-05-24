@@ -12,6 +12,13 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  window._sb = supabase.createClient(
+    'https://cyjkxitftidzyautgprs.supabase.co',
+    'sb_publishable_3VqJAWNmWkc15l1raHx28A_RpTqJ4dE'
+  );
+</script>
 <style>
 /* ── Variables ── */
 :root{
@@ -574,13 +581,30 @@ function CountdownLocalized({ t }) {
 
 function RSVPLocalized({ t }) {
   const [submitted, setSubmitted] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
   const [data, setData] = React.useState({name:'',phone:'',attending:'yes',guests:1,pref:'regular',notes:''});
   const formRef  = React.useRef(null);
   const thanksRef = React.useRef(null);
   const upd = k => e => setData(d => ({...d,[k]:e.target.value}));
 
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault();
+    const rawPhone = data.phone.replace(/[\s\-\.\(\)\/]/g, '');
+    if (!/^\+?[0-9]{7,15}$/.test(rawPhone)) {
+      alert(lang === 'he' ? 'מספר טלפון לא תקין' : 'Numéro de téléphone invalide');
+      return;
+    }
+    setLoading(true);
+    const { error } = await window._sb.from('rsvp').insert([{
+      name: data.name,
+      phone: data.phone,
+      attending: data.attending,
+      guests: Number(data.guests),
+      pref: data.pref,
+      notes: data.notes,
+    }]);
+    setLoading(false);
+    if (error) { alert(error.message); return; }
     const exit = animate
       ? animate(formRef.current, { opacity:0, y:-20 }, { duration:0.4, ease:[0.4,0,1,1] })
       : Promise.resolve();
@@ -627,7 +651,7 @@ function RSVPLocalized({ t }) {
       </div>
       <div className="form-row"><label className="form-label">{t.fNotes}</label><textarea className="form-textarea" value={data.notes} onChange={upd('notes')} placeholder={t.fNotesPh}/></div>
       <div style={{textAlign:'center',marginTop:32}}>
-        <HoverBtn type="submit" full>{t.fSubmit}</HoverBtn>
+        <HoverBtn type="submit" full disabled={loading} style={loading?{opacity:0.6,pointerEvents:'none'}:{}}>{loading ? '...' : t.fSubmit}</HoverBtn>
       </div>
     </form>
   );
