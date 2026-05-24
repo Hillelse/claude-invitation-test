@@ -135,15 +135,24 @@ html,body{font-family:var(--font-body);color:var(--ink);background:var(--cream);
 @media(max-width:720px){
   .invite-card{padding:44px 28px 56px!important;}
   .details-grid{grid-template-columns:1fr!important;}
-  .detail-cell{border-inline-end:none!important;border-bottom:1px solid var(--line)!important;}
+  .detail-cell{border-inline-end:none!important;border-bottom:1px solid var(--line)!important;padding:28px 16px!important;}
   .detail-cell:last-child{border-bottom:none!important;}
   .countdown-grid{grid-template-columns:repeat(2,1fr)!important;max-width:320px!important;}
   .gallery-grid{grid-template-columns:1fr 1fr!important;}
   .rsvp-glass{padding:32px 22px!important;}
+  .map-card{padding:24px 20px!important;}
+  .sched-wrap{padding:16px 12px!important;margin:0 -12px!important;}
+}
+@media(max-width:640px){
+  .names-grid{grid-template-columns:1fr!important;}
 }
 @media(max-width:500px){
-  .names-grid{grid-template-columns:1fr!important;}
+  .invite-card{padding:32px 18px 40px!important;}
+  .rsvp-glass{padding:24px 16px!important;}
   .form-row.two-col{grid-template-columns:1fr!important;}
+}
+@media(max-width:400px){
+  .gallery-grid{grid-template-columns:1fr!important;}
 }
 </style>
 </head>
@@ -416,17 +425,17 @@ function Hero({ t, lang }) {
   }, []);
 
   const fontSerif = lang === 'he' ? 'var(--font-serif)' : "'Great Vibes',cursive";
-  const nameSize = lang === 'he' ? 'clamp(68px,13vw,160px)' : 'clamp(60px,11vw,140px)';
+  const nameSize = lang === 'he' ? 'clamp(64px,16vw,160px)' : 'clamp(64px,16vw,140px)';
 
   return (
-    <section ref={heroRef} style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'80px 32px 60px',position:'relative',textAlign:'center',overflow:'hidden'}}>
+    <section ref={heroRef} style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'80px clamp(20px,5vw,32px) 60px',position:'relative',textAlign:'center',overflow:'hidden'}}>
       {/* Radial bg glow */}
       <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse 80% 55% at 50% 40%,rgba(143,166,143,0.12) 0%,transparent 70%)',pointerEvents:'none'}}/>
 
-      <div ref={namesRef} data-hero-item style={{fontSize:nameSize,lineHeight:1.4,fontWeight:400,letterSpacing:lang==='he'?'0.02em':'0',margin:'6px 0',position:'relative',zIndex:1}}>
+      <div ref={namesRef} data-hero-item style={{fontSize:nameSize,lineHeight:1.4,fontWeight:400,letterSpacing:lang==='he'?'0.02em':'0',margin:'6px 0',position:'relative',zIndex:1,whiteSpace:'nowrap'}}>
         <span className="gold-foil" style={{fontFamily:fontSerif}}>
           {t.nameA}
-          <span className="gold-foil" style={{display:'inline-block',margin:'0 28px',fontFamily:"'Great Vibes',cursive",fontSize:'0.52em',verticalAlign:'middle'}}>&</span>
+          <span className="gold-foil" style={{display:'inline-block',margin:'0 clamp(2px,0.5vw,16px)',fontFamily:"'Great Vibes',cursive",fontSize:'0.52em',verticalAlign:'middle'}}>&</span>
           {t.nameB}
         </span>
       </div>
@@ -446,8 +455,8 @@ function Hero({ t, lang }) {
         <HoverBtn href="#rsvp" outline>{t.rsvpBtn}</HoverBtn>
       </div>
 
-      <div data-hero-item style={{position:'absolute',bottom:28,left:'50%',transform:'translateX(-50%)',fontFamily:'var(--font-serif)',fontSize:12,letterSpacing:'0.46em',color:'var(--copper-deep)',fontWeight:400,opacity:0.55}}>
-        ↓ &nbsp; {t.scroll}
+      <div data-hero-item style={{position:'absolute',bottom:28,left:0,right:0,display:'flex',justifyContent:'center',fontFamily:'var(--font-serif)',fontSize:12,letterSpacing:'0.46em',color:'var(--copper-deep)',fontWeight:400,opacity:0.55}}>
+        <span dir="ltr">↓ &nbsp; {t.scroll} &nbsp; ↓</span>
       </div>
     </section>
   );
@@ -723,7 +732,7 @@ function App() {
       <Hero t={t} lang={lang}/>
 
       {/* ── INVITATION CARD ── */}
-      <section style={{padding:'120px 32px',background:'var(--cream-deep)'}}>
+      <section style={{padding:'clamp(60px,10vw,120px) clamp(20px,5vw,32px)',background:'var(--cream-deep)'}}>
         <div className="reveal invite-card">
           <OrnamentMonogram a="ש" b="ה"/>
           <p style={{marginTop:28,fontFamily:'var(--font-serif)',fontSize:'clamp(18px,2vw,26px)',fontWeight:400,lineHeight:1.8,color:'var(--copper-deep)',whiteSpace:'pre-line'}}>{t.invitedBlessing}</p>
@@ -748,7 +757,7 @@ function App() {
       </section>
 
       {/* ── DETAILS ── */}
-      <section style={{padding:'120px 32px'}}>
+      <section style={{padding:'clamp(60px,10vw,120px) clamp(20px,5vw,32px)'}}>
         <div className="reveal" style={{textAlign:'center',marginBottom:70}}>
           <h2 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(30px,4vw,44px)',fontWeight:400,color:'var(--ink)'}}>{t.detailsKicker}</h2>
           <div style={{marginTop:20,maxWidth:140,margin:'20px auto 0'}}><OrnamentSimple/></div>
@@ -769,7 +778,7 @@ function App() {
       </section>
 
       {/* ── COUNTDOWN ── */}
-      <section style={{padding:'100px 32px 120px',background:'var(--cream-deep)',textAlign:'center'}}>
+      <section style={{padding:'clamp(60px,10vw,100px) clamp(20px,5vw,32px) clamp(60px,10vw,120px)',background:'var(--cream-deep)',textAlign:'center'}}>
         <div className="reveal">
           <h3 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(24px,3vw,34px)',fontWeight:400,marginBottom:16,color:'var(--ink)',letterSpacing:'0.04em'}}>{t.countdownKicker}</h3>
           <div style={{marginBottom:44,maxWidth:100,margin:'14px auto 44px'}}><OrnamentSimple/></div>
@@ -778,7 +787,7 @@ function App() {
       </section>
 
       {/* ── SCHEDULE ── */}
-      <section style={{padding:'120px 32px'}}>
+      <section style={{padding:'clamp(60px,10vw,120px) clamp(20px,5vw,32px)'}}>
         <div className="reveal" style={{textAlign:'center',marginBottom:60}}>
           <h2 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(30px,4vw,44px)',fontWeight:400,color:'var(--ink)'}}>{t.scheduleKicker}</h2>
           <div style={{marginTop:20,maxWidth:140,margin:'20px auto 0'}}><OrnamentSimple/></div>
@@ -799,7 +808,7 @@ function App() {
       </section>
 
       {/* ── MAP ── */}
-      <section style={{padding:'60px 32px 120px',background:'var(--cream-deep)'}}>
+      <section style={{padding:'clamp(40px,6vw,60px) clamp(20px,5vw,32px) clamp(60px,10vw,120px)',background:'var(--cream-deep)'}}>
         <div className="reveal" style={{textAlign:'center',marginBottom:48}}>
           <h3 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(28px,3.4vw,38px)',fontWeight:400,color:'var(--ink)'}}>{t.mapKicker}</h3>
         </div>
@@ -815,7 +824,7 @@ function App() {
       </section>
 
       {/* ── GALLERY ── */}
-      <section style={{padding:'120px 32px'}}>
+      <section style={{padding:'clamp(60px,10vw,120px) clamp(20px,5vw,32px)'}}>
         <div className="reveal" style={{textAlign:'center',marginBottom:60}}>
           <h2 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(28px,3.4vw,38px)',fontWeight:400,color:'var(--ink)'}}>{t.galleryKicker}</h2>
         </div>
@@ -849,7 +858,7 @@ function App() {
       </section>
 
       {/* ── RSVP ── */}
-      <section id="rsvp" style={{padding:'120px 32px',background:'var(--cream-deep)'}}>
+      <section id="rsvp" style={{padding:'clamp(60px,10vw,120px) clamp(20px,5vw,32px)',background:'var(--cream-deep)'}}>
         <div className="reveal" style={{textAlign:'center',marginBottom:56}}>
           <h2 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(30px,4vw,44px)',fontWeight:400,color:'var(--ink)'}}>{t.rsvpKicker}</h2>
           <p style={{marginTop:16,color:'var(--ink-soft)',fontWeight:300,fontSize:16,letterSpacing:'0.04em'}}>{t.rsvpDeadline}</p>
@@ -861,7 +870,7 @@ function App() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{padding:'70px 32px 90px',textAlign:'center',background:'var(--cream-deep)'}}>
+      <footer style={{padding:'clamp(40px,6vw,70px) 20px clamp(50px,8vw,90px)',textAlign:'center',background:'var(--cream-deep)'}}>
         <div className="reveal" style={{fontFamily:"'Great Vibes',cursive",fontSize:64,color:'var(--copper)',lineHeight:1}}>Shirel &amp; Hillel</div>
         <div className="reveal" dir="ltr" style={{marginTop:14,fontFamily:'var(--font-serif)',fontSize:19,fontWeight:300,letterSpacing:'0.24em',color:'var(--copper-deep)'}}>
           09 · 08 · 2026
