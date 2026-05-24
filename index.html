@@ -661,7 +661,7 @@ function RSVPLocalized({ t }) {
   return (
     <form ref={formRef} onSubmit={handleSubmit} style={{maxWidth:480,margin:'0 auto'}}>
       <div className="form-row"><input className="form-input" required value={data.name} onChange={upd('name')} placeholder={t.fName}/></div>
-      <div className="form-row"><input className="form-input" type="tel" required value={data.phone} onChange={upd('phone')} placeholder={t.fPhone}/></div>
+      <div className="form-row"><input className="form-input" type="tel" required value={data.phone} onChange={upd('phone')} placeholder={t.fPhone} style={{direction:'inherit'}}/></div>
       <div className="form-row">
         <label className="form-label">{t.fAttend}</label>
         <div className="form-radio-group">
