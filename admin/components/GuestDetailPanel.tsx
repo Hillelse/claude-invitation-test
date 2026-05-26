@@ -31,6 +31,24 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
 
   const PREF_LABELS: Record<string, string> = { regular: t.mealRegular, vegan: t.mealVegan, kosher: t.mealKosher };
 
+  const translateSummary = (s: string) => {
+    if (t.dir === 'rtl') return s;
+    return s
+      .replace('מילא טופס לראשונה', 'Rempli pour la 1ère fois')
+      .replace('מילא טופס · אישר פרטים', 'Formulaire · Détails confirmés')
+      .replace('מילא טופס', 'Formulaire rempli')
+      .replace('אישר פרטים', 'Détails confirmés')
+      .replace('אורחים:', 'Invités:')
+      .replace('תפריט:', 'Repas:')
+      .replace('הגעה:', 'Présence:')
+      .replace('סטטוס:', 'Statut:')
+      .replace('שם:', 'Nom:')
+      .replace('טלפון:', 'Tél:')
+      .replace('נוסף ידנית', 'Ajouté manuellement')
+      .replace('יובא מקובץ', 'Importé depuis fichier')
+      .replace('רשומה נוצרה', 'Entrée créée');
+  };
+
   const upd = (k: keyof Rsvp) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -201,7 +219,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
                 {new Date(h.changed_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}
               </span>
               <span style={{ fontWeight: 600, color: 'var(--green-deep)' }}>{h.changed_by}</span>
-              <span>{h.summary}</span>
+              <span>{translateSummary(h.summary)}</span>
             </div>
           ))}
           <div style={{ fontSize: 11, color: 'var(--ink-soft)', marginBottom: 6, display: 'flex', gap: 6, flexWrap: 'wrap', lineHeight: 1.4, opacity: 0.6 }}>

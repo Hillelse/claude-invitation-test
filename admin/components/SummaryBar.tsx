@@ -22,7 +22,7 @@ export default function SummaryBar({ data, activeStatus, onStatusClick }: Props)
   const pending   = data.filter(r => resolveStatus(r) === 'Pending').reduce((s, r) => s + (r.guests || 1), 0);
 
   const cards = [
-    { label: t.totalRsvps, value: data.length, accent: 'var(--green)',     bg: 'rgba(79,107,82,0.08)', filter: null },
+    { label: t.totalRsvps, value: data.reduce((s, r) => s + (r.guests || 1), 0), accent: 'var(--green)',     bg: 'rgba(79,107,82,0.08)', filter: null },
     { label: t.confirmed,  value: confirmed,   accent: '#16A34A',           bg: '#F0FDF4',              filter: 'Confirmed' },
     { label: t.declined,   value: declined,    accent: '#DC2626',           bg: '#FEF2F2',              filter: 'Declined' },
     { label: t.pending,    value: pending,     accent: '#EA580C',           bg: '#FFF7ED',              filter: 'Pending' },
