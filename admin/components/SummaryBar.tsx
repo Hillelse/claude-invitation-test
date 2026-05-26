@@ -13,17 +13,15 @@ function resolveStatus(r: Rsvp) {
 
 export default function SummaryBar({ data }: Props) {
   const { t } = useLang();
-  const confirmed   = data.filter(r => resolveStatus(r) === 'Confirmed').length;
+  const confirmed   = data.filter(r => resolveStatus(r) === 'Confirmed').reduce((s, r) => s + (r.guests || 1), 0);
   const declined    = data.filter(r => resolveStatus(r) === 'Declined').length;
   const pending     = data.filter(r => resolveStatus(r) === 'Pending').length;
-  const totalGuests = data.filter(r => resolveStatus(r) === 'Confirmed').reduce((s, r) => s + (r.guests || 0), 0);
 
   const cards = [
     { label: t.totalRsvps,   value: data.length, accent: 'var(--green)',      bg: 'rgba(79,107,82,0.08)' },
     { label: t.confirmed,    value: confirmed,   accent: '#16A34A',            bg: '#F0FDF4' },
     { label: t.declined,     value: declined,    accent: '#DC2626',            bg: '#FEF2F2' },
     { label: t.pending,      value: pending,     accent: '#EA580C',            bg: '#FFF7ED' },
-    { label: t.guestsComing, value: totalGuests, accent: 'var(--green-deep)',  bg: 'rgba(46,70,50,0.07)' },
   ];
 
   return (
