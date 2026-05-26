@@ -52,9 +52,12 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
     if (form.phone !== guest.phone)             diff.push(`טלפון: ${guest.phone}→${form.phone}`);
     if (diff.length > 0) {
       const entry = { rsvp_id: guest.id, changed_by: session?.user?.name ?? 'admin', summary: diff.join(' · ') };
-      const { data: inserted } = await supabase.from('rsvp_audit').insert(entry).select().single();
-      if (inserted) setHistory(h => [inserted as RsvpAudit, ...h]);
+      const { error: auditErr } = await supabase.from('rsvp_audit').insert(entry);
+      if (auditErr) { toast(`Audit: ${auditErr.message}`, 'error'); }
     }
+    // Re-fetch history to show latest
+    const { data: freshHistory } = await supabase.from('rsvp_audit').select('*').eq('rsvp_id', guest.id).order('changed_at', { ascending: false });
+    if (freshHistory) setHistory(freshHistory as RsvpAudit[]);
     setSaving(false);
     onUpdate({ ...form, guests: Number(form.guests) });
     setEditing(false);
