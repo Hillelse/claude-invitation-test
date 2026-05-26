@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
-import { supabase, Rsvp } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { supabase, Rsvp, RsvpAudit } from '@/lib/supabase';
 import StatusBadge from './StatusBadge';
 import { useLang } from '@/app/providers';
 import { isValidPhone } from '@/lib/validation';
@@ -15,10 +16,18 @@ type Props = {
 
 export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, toast }: Props) {
   const { t } = useLang();
+  const { data: session } = useSession();
   const [editing, setEditing]         = useState(false);
   const [form, setForm]               = useState({ ...guest });
   const [saving, setSaving]           = useState(false);
   const [confirmDelete, setConfirm]   = useState(false);
+  const [history, setHistory]         = useState<RsvpAudit[]>([]);
+
+  useEffect(() => {
+    setForm({ ...guest });
+    supabase.from('rsvp_audit').select('*').eq('rsvp_id', guest.id).order('changed_at', { ascending: false })
+      .then(({ data }) => setHistory((data ?? []) as RsvpAudit[]));
+  }, [guest.id]);
 
   const PREF_LABELS: Record<string, string> = { regular: t.mealRegular, vegan: t.mealVegan, kosher: t.mealKosher };
 
@@ -33,8 +42,20 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
       guests: Number(form.guests), pref: form.pref, notes: form.notes || null,
       status: form.status, internal_notes: form.internal_notes || null,
     }).eq('id', guest.id);
+    if (error) { setSaving(false); toast(error.message, 'error'); return; }
+    const diff: string[] = [];
+    if (form.name !== guest.name)               diff.push(`שם: ${guest.name}→${form.name}`);
+    if (form.attending !== guest.attending)      diff.push(`הגעה: ${guest.attending}→${form.attending}`);
+    if (Number(form.guests) !== guest.guests)   diff.push(`אורחים: ${guest.guests}→${form.guests}`);
+    if (form.status !== guest.status)           diff.push(`סטטוס: ${guest.status}→${form.status}`);
+    if (form.pref !== guest.pref)               diff.push(`תפריט: ${guest.pref}→${form.pref}`);
+    if (form.phone !== guest.phone)             diff.push(`טלפון: ${guest.phone}→${form.phone}`);
+    if (diff.length > 0) {
+      const entry = { rsvp_id: guest.id, changed_by: session?.user?.name ?? 'admin', summary: diff.join(' · ') };
+      const { data: inserted } = await supabase.from('rsvp_audit').insert(entry).select().single();
+      if (inserted) setHistory(h => [inserted as RsvpAudit, ...h]);
+    }
     setSaving(false);
-    if (error) { toast(error.message, 'error'); return; }
     onUpdate({ ...form, guests: Number(form.guests) });
     setEditing(false);
     toast(t.guestUpdated);
@@ -83,7 +104,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
           </div>
         </div>
 
-        <div style={{ padding: '20px 24px' }}>
+        <div style={{ padding: '20px 24px 8px' }}>
           {!editing ? (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
@@ -92,7 +113,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
                 <Field label={t.fieldGuests} val={String(guest.guests)} mono />
                 <Field label={t.fieldMeal} val={PREF_LABELS[guest.pref] ?? guest.pref} />
                 <Field label={t.fieldStatus} val={guest.status ?? '—'} />
-                <Field label={t.fieldSubmitted} val={new Date(guest.created_at).toLocaleDateString()} mono />
+                <Field label={t.fieldSubmitted} val={new Date(guest.created_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })} mono />
               </div>
               {guest.notes && (
                 <div style={{ marginTop: 4, marginBottom: 16, padding: '12px', background: 'var(--cream-deep)', borderRadius: 8, fontSize: 13, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
@@ -167,6 +188,25 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
               </div>
             </div>
           )}
+        </div>
+
+        <div style={{ padding: '0 24px 24px', borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{t.historyLabel}</div>
+          {history.map(h => (
+            <div key={h.id} style={{ fontSize: 11, color: 'var(--ink-soft)', marginBottom: 6, display: 'flex', gap: 6, flexWrap: 'wrap', lineHeight: 1.4 }}>
+              <span style={{ color: 'var(--ink-muted)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                {new Date(h.changed_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}
+              </span>
+              <span style={{ fontWeight: 600, color: 'var(--green-deep)' }}>{h.changed_by}</span>
+              <span>{h.summary}</span>
+            </div>
+          ))}
+          <div style={{ fontSize: 11, color: 'var(--ink-soft)', marginBottom: 6, display: 'flex', gap: 6, flexWrap: 'wrap', lineHeight: 1.4, opacity: 0.6 }}>
+            <span style={{ color: 'var(--ink-muted)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+              {new Date(guest.created_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}
+            </span>
+            <span>{t.auditCreated}</span>
+          </div>
         </div>
       </div>
     </>

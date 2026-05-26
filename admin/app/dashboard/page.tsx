@@ -7,6 +7,7 @@ import GuestDetailPanel from '@/components/GuestDetailPanel';
 import AddGuestModal from '@/components/AddGuestModal';
 import Toast, { ToastMsg } from '@/components/Toast';
 import { useLang } from '@/app/providers';
+import { normalizePhone } from '@/lib/validation';
 import * as XLSX from 'xlsx';
 
 export default function DashboardPage() {
@@ -77,9 +78,9 @@ export default function DashboardPage() {
         return '';
       };
       const records = rows.map(row => ({
-        name: findVal(row, 'name', 'שם', 'fullname'),
-        phone: findVal(row, 'phone', 'טלפון', 'mobile', 'נייד', 'tel').replace(/[\s\-\.\(\)\/]/g, ''),
-        guests: Number(findVal(row, 'guests', 'אורחים', 'כמות')) || 1,
+        name: findVal(row, 'name', 'שם', 'fullname', 'שםמלא', 'nom'),
+        phone: normalizePhone(findVal(row, 'phone', 'טלפון', 'mobile', 'נייד', 'tel', 'téléphone', 'cellulaire')),
+        guests: Number(findVal(row, 'guests', 'אורחים', 'כמות', 'מספר', 'invités', 'nb', 'number', 'nbguests', 'nombre')) || 1,
         attending: 'pending',
         pref: 'regular',
         status: 'Pending',
@@ -88,13 +89,15 @@ export default function DashboardPage() {
       })).filter(r => r.name && r.phone);
       if (!records.length) { toast('No valid rows found', 'error'); return; }
       const { data: existing } = await supabase.from('rsvp').select('phone');
-      const existingPhones = new Set((existing ?? []).map((r: { phone: string }) => r.phone));
-      const newRecords = records.filter(r => !existingPhones.has(r.phone));
+      const existingPhones = new Set((existing ?? []).map((r: { phone: string }) => normalizePhone(r.phone)));
+      const newRecords = records.filter(r => !existingPhones.has(normalizePhone(r.phone)));
       if (!newRecords.length) { toast(t.importAllExist(records.length), 'error'); return; }
       const { data: inserted, error } = await supabase.from('rsvp').insert(newRecords).select();
       if (error) { toast(error.message, 'error'); return; }
       const added = inserted as Rsvp[];
       setData(d => [...added, ...d]);
+      const who = 'import';
+      await supabase.from('rsvp_audit').insert(added.map(r => ({ rsvp_id: r.id, changed_by: who, summary: t.auditImported })));
       const skipped = records.length - newRecords.length;
       toast(t.importDone(newRecords.length, skipped));
     };

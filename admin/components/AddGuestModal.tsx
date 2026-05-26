@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { supabase, Rsvp } from '@/lib/supabase';
 import { useLang } from '@/app/providers';
 import { isValidPhone } from '@/lib/validation';
@@ -14,6 +15,7 @@ const EMPTY = { name: '', phone: '', attending: 'pending', guests: 1, pref: 'reg
 
 export default function AddGuestModal({ onClose, onAdded, toast }: Props) {
   const { t } = useLang();
+  const { data: session } = useSession();
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
 
@@ -38,7 +40,9 @@ export default function AddGuestModal({ onClose, onAdded, toast }: Props) {
     }]).select().single();
     setSaving(false);
     if (error) { toast(error.message, 'error'); return; }
-    onAdded(data as Rsvp);
+    const added = data as Rsvp;
+    await supabase.from('rsvp_audit').insert({ rsvp_id: added.id, changed_by: session?.user?.name ?? 'admin', summary: t.auditAdded });
+    onAdded(added);
     onClose();
     toast(t.guestAdded);
   };

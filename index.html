@@ -616,7 +616,11 @@ function RSVPLocalized({ t }) {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    const rawPhone = data.phone.replace(/[\s\-\.\(\)\/]/g, '');
+    let rawPhone = data.phone.replace(/[\s\-\.\(\)\/]/g, '');
+    if (rawPhone.startsWith('+33')) rawPhone = '0' + rawPhone.slice(3);
+    else if (/^0033/.test(rawPhone)) rawPhone = '0' + rawPhone.slice(4);
+    else if (rawPhone.startsWith('+972')) rawPhone = '0' + rawPhone.slice(4);
+    else if (/^00972/.test(rawPhone)) rawPhone = '0' + rawPhone.slice(5);
     if (!/^\+?[0-9]{7,15}$/.test(rawPhone)) {
       alert(lang === 'he' ? 'מספר טלפון לא תקין' : 'Numéro de téléphone invalide');
       return;
