@@ -10,7 +10,7 @@ type Props = {
   onFilteredChange: (rows: Rsvp[]) => void;
 };
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
 
 function resolveStatus(r: Rsvp) {
   if (r.status) return r.status;
