@@ -116,7 +116,7 @@ html,body{font-family:var(--font-body);color:var(--ink);background:var(--cream);
 .map-card:hover{transform:translateY(-6px);box-shadow:0 24px 60px rgba(46,70,50,0.13);}
 
 /* ── Invite card ── */
-.invite-card{max-width:640px;margin:0 auto;text-align:center;padding:32px 52px 76px;background:var(--cream);border:1px solid rgba(79,107,82,0.4);position:relative;box-shadow:0 8px 48px rgba(46,70,50,0.08);}
+.invite-card{max-width:640px;margin:0 auto;text-align:center;padding:8px 52px 76px;background:var(--cream);border:1px solid rgba(79,107,82,0.4);position:relative;box-shadow:0 8px 48px rgba(46,70,50,0.08);}
 .invite-card::before{content:'';position:absolute;inset:10px;border:1px solid rgba(79,107,82,0.14);pointer-events:none;}
 .invite-card::after{content:'';position:absolute;inset:6px;border:1px solid rgba(79,107,82,0.1);z-index:-1;pointer-events:none;}
 
@@ -133,7 +133,7 @@ html,body{font-family:var(--font-body);color:var(--ink);background:var(--cream);
 
 /* ── Responsive ── */
 @media(max-width:720px){
-  .invite-card{padding:22px 28px 56px!important;}
+  .invite-card{padding:6px 28px 56px!important;}
   .details-grid{grid-template-columns:1fr!important;}
   .detail-cell{border-inline-end:none!important;border-bottom:1px solid var(--line)!important;padding:28px 16px!important;}
   .detail-cell:last-child{border-bottom:none!important;}
@@ -147,7 +147,7 @@ html,body{font-family:var(--font-body);color:var(--ink);background:var(--cream);
   .names-grid{grid-template-columns:1fr!important;}
 }
 @media(max-width:500px){
-  .invite-card{padding:16px 18px 40px!important;}
+  .invite-card{padding:5px 18px 40px!important;}
   .rsvp-glass{padding:24px 16px!important;}
   .form-row.two-col{grid-template-columns:1fr!important;}
 }
@@ -749,10 +749,10 @@ function App() {
       <Hero t={t} lang={lang}/>
 
       {/* ── INVITATION CARD ── */}
-      <section style={{padding:'clamp(12px,2vw,24px) clamp(20px,5vw,32px)',background:'var(--cream-deep)'}}>
+      <section style={{padding:'clamp(30px,5vw,60px) clamp(20px,5vw,32px)',background:'var(--cream-deep)'}}>
         <div className="reveal invite-card">
-          <img src="./logo-site.svg" alt="S&H" style={{height:280,width:'auto',display:'block',margin:'0 auto'}}/>
-          <p style={{marginTop:8,fontFamily:'var(--font-serif)',fontSize:'clamp(18px,2vw,26px)',fontWeight:400,lineHeight:1.8,color:'var(--copper-deep)',whiteSpace:'pre-line'}}>{t.invitedBlessing}</p>
+          <img src="./logo-site.svg" alt="S&H" style={{height:560,width:'auto',display:'block',margin:'-112px auto -112px'}}/>
+          <p style={{marginTop:4,fontFamily:'var(--font-serif)',fontSize:'clamp(18px,2vw,26px)',fontWeight:400,lineHeight:1.8,color:'var(--copper-deep)',whiteSpace:'pre-line'}}>{t.invitedBlessing}</p>
           <div style={{margin:'32px auto',width:'50%'}}><OrnamentSimple/></div>
           <div style={{display:'flex',justifyContent:'center',gap:'clamp(24px,6vw,80px)',flexWrap:'wrap',marginBottom:32}}>
             <div style={{textAlign:'center',fontFamily:'var(--font-serif)',fontSize:14,fontWeight:400,color:'var(--ink-soft)',lineHeight:1.8}}>{t.groomParents}</div>
