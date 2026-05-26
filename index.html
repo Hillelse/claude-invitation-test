@@ -627,24 +627,37 @@ function RSVPLocalized({ t }) {
     }
     setLoading(true);
     const newStatus = data.attending === 'yes' ? 'Confirmed' : 'Declined';
-    const { data: existing } = await window._sb.from('rsvp').select('id, name').eq('phone', rawPhone).maybeSingle();
-    let error;
+    const { data: existing } = await window._sb.from('rsvp').select('*').eq('phone', rawPhone).maybeSingle();
+    let error, rsvpId, auditSummary;
+    const guestDisplayName = existing ? existing.name.trim() : data.name.trim();
     if (existing) {
       const existingName = existing.name.trim();
       const typedName = data.name.trim();
       const mergedName = typedName && typedName.toLowerCase() !== existingName.toLowerCase()
         ? `${existingName} (${typedName})` : existingName;
+      const diff = [];
+      if (Number(data.guests) !== existing.guests) diff.push(`אורחים: ${existing.guests}→${data.guests}`);
+      if (data.pref !== existing.pref)             diff.push(`תפריט: ${existing.pref}→${data.pref}`);
+      if (data.attending !== existing.attending)   diff.push(`הגעה: ${existing.attending}→${data.attending}`);
+      auditSummary = diff.length > 0 ? `מילא טופס · ${diff.join(' · ')}` : 'מילא טופס · אישר פרטים';
+      rsvpId = existing.id;
       ({ error } = await window._sb.from('rsvp').update({
         name: mergedName, attending: data.attending,
         guests: Number(data.guests), pref: data.pref,
         notes: data.notes || null, status: newStatus,
       }).eq('id', existing.id));
     } else {
-      ({ error } = await window._sb.from('rsvp').insert([{
+      auditSummary = 'מילא טופס לראשונה';
+      const { data: inserted, error: insertErr } = await window._sb.from('rsvp').insert([{
         name: data.name, phone: rawPhone, attending: data.attending,
         guests: Number(data.guests), pref: data.pref,
         notes: data.notes || null, status: newStatus,
-      }]));
+      }]).select().single();
+      error = insertErr;
+      rsvpId = inserted?.id;
+    }
+    if (!error && rsvpId) {
+      await window._sb.from('rsvp_audit').insert({ rsvp_id: rsvpId, changed_by: guestDisplayName, summary: auditSummary });
     }
     setLoading(false);
     if (error) { alert(error.message); return; }
