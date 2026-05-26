@@ -12,6 +12,7 @@ export const TEXT = {
     pageTitle: 'רשימת אורחים',
     pageDate: '09.08.2026 · חתונה',
     export: '↓ ייצוא',
+    import: '↑ ייבוא',
     addGuest: '+ הוסף אורח',
 
     totalRsvps: 'סה״כ',
@@ -86,6 +87,8 @@ export const TEXT = {
 
     newRsvp: 'הגעה חדשה התקבלה 💌',
     exported: (n: number) => `יוצאו ${n} שורות`,
+    importDone: (n: number, skipped: number) => `יובאו ${n} אורחים${skipped > 0 ? `, דולגו ${skipped} כפולים` : ''}`,
+    importAllExist: (n: number) => `כל ${n} הרשומות כבר קיימות`,
     guestUpdated: 'האורח עודכן',
     guestDeleted: 'האורח נמחק',
     guestAdded: 'האורח נוסף',
@@ -101,6 +104,7 @@ export const TEXT = {
     pageTitle: 'Liste des invités',
     pageDate: '09.08.2026 · Mariage',
     export: '↓ Exporter',
+    import: '↑ Importer',
     addGuest: '+ Ajouter',
 
     totalRsvps: 'Total RSVP',
@@ -175,6 +179,8 @@ export const TEXT = {
 
     newRsvp: 'Nouveau RSVP reçu 💌',
     exported: (n: number) => `${n} lignes exportées`,
+    importDone: (n: number, skipped: number) => `${n} invités importés${skipped > 0 ? `, ${skipped} doublons ignorés` : ''}`,
+    importAllExist: (n: number) => `Les ${n} entrées existent déjà`,
     guestUpdated: 'Invité mis à jour',
     guestDeleted: 'Invité supprimé',
     guestAdded: 'Invité ajouté',

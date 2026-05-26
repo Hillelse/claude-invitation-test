@@ -8,6 +8,7 @@ type Props = {
   data: Rsvp[];
   onSelect: (r: Rsvp) => void;
   onFilteredChange: (rows: Rsvp[]) => void;
+  statusFilter?: string | null;
 };
 
 const PAGE_SIZE = 50;
@@ -19,13 +20,18 @@ function resolveStatus(r: Rsvp) {
   return 'Pending';
 }
 
-export default function GuestTable({ data, onSelect, onFilteredChange }: Props) {
+export default function GuestTable({ data, onSelect, onFilteredChange, statusFilter }: Props) {
   const { t } = useLang();
   const [search, setSearch]             = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterAtt, setFilterAtt]       = useState('all');
   const [filterPref, setFilterPref]     = useState('all');
   const [page, setPage] = useState(0);
+
+  useEffect(() => {
+    setFilterStatus(statusFilter ?? 'all');
+    setPage(0);
+  }, [statusFilter]);
 
   const PREF_LABELS: Record<string, string> = { regular: t.mealRegular, vegan: t.mealVegan, kosher: t.mealKosher };
 

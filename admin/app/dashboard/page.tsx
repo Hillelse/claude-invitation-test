@@ -11,13 +11,15 @@ import * as XLSX from 'xlsx';
 
 export default function DashboardPage() {
   const { t } = useLang();
-  const [data, setData]         = useState<Rsvp[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [selected, setSelected] = useState<Rsvp | null>(null);
-  const [showAdd, setShowAdd]   = useState(false);
-  const [toasts, setToasts]     = useState<ToastMsg[]>([]);
-  const [live, setLive]         = useState(false);
-  const filteredRef             = useRef<Rsvp[]>([]);
+  const [data, setData]             = useState<Rsvp[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [selected, setSelected]     = useState<Rsvp | null>(null);
+  const [showAdd, setShowAdd]       = useState(false);
+  const [toasts, setToasts]         = useState<ToastMsg[]>([]);
+  const [live, setLive]             = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const filteredRef                 = useRef<Rsvp[]>([]);
+  const importRef                   = useRef<HTMLInputElement>(null);
 
   const toast = useCallback((text: string, type: 'success' | 'error' = 'success') => {
     setToasts(ts => [...ts, { id: Date.now(), text, type }]);
@@ -56,6 +58,48 @@ export default function DashboardPage() {
   const handleDelete   = (id: number) => setData(d => d.filter(r => r.id !== id));
   const handleAdded    = (r: Rsvp)   => setData(d => [r, ...d]);
   const handleFiltered = useCallback((rows: Rsvp[]) => { filteredRef.current = rows; }, []);
+
+  const importXlsx = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const wb = XLSX.read(ev.target?.result, { type: 'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
+      const norm = (v: unknown) => String(v ?? '').trim();
+      const findVal = (row: Record<string, unknown>, ...keys: string[]) => {
+        for (const k of keys) {
+          const col = Object.keys(row).find(c => c.replace(/\s/g, '').toLowerCase().includes(k.toLowerCase()));
+          if (col !== undefined) return norm(row[col]);
+        }
+        return '';
+      };
+      const records = rows.map(row => ({
+        name: findVal(row, 'name', 'שם', 'fullname'),
+        phone: findVal(row, 'phone', 'טלפון', 'mobile', 'נייד', 'tel').replace(/[\s\-\.\(\)\/]/g, ''),
+        guests: Number(findVal(row, 'guests', 'אורחים', 'כמות')) || 1,
+        attending: 'pending',
+        pref: 'regular',
+        status: 'Pending',
+        notes: null as null,
+        internal_notes: null as null,
+      })).filter(r => r.name && r.phone);
+      if (!records.length) { toast('No valid rows found', 'error'); return; }
+      const { data: existing } = await supabase.from('rsvp').select('phone');
+      const existingPhones = new Set((existing ?? []).map((r: { phone: string }) => r.phone));
+      const newRecords = records.filter(r => !existingPhones.has(r.phone));
+      if (!newRecords.length) { toast(t.importAllExist(records.length), 'error'); return; }
+      const { data: inserted, error } = await supabase.from('rsvp').insert(newRecords).select();
+      if (error) { toast(error.message, 'error'); return; }
+      const added = inserted as Rsvp[];
+      setData(d => [...added, ...d]);
+      const skipped = records.length - newRecords.length;
+      toast(t.importDone(newRecords.length, skipped));
+    };
+    reader.readAsBinaryString(file);
+  };
 
   const exportXlsx = () => {
     const source = filteredRef.current.length > 0 ? filteredRef.current : data;
@@ -96,6 +140,8 @@ export default function DashboardPage() {
           <p style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: 4, letterSpacing: '0.12em' }}>{t.pageDate}</p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <input ref={importRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={importXlsx} />
+          <button onClick={() => importRef.current?.click()} style={btn()}>{t.import}</button>
           <button onClick={exportXlsx} style={btn()}>{t.export}</button>
           <button onClick={() => setShowAdd(true)} style={btn(true)}>{t.addGuest}</button>
         </div>
@@ -105,8 +151,8 @@ export default function DashboardPage() {
         <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--ink-soft)', fontSize: 13, letterSpacing: '0.2em' }}>{t.loading}</div>
       ) : (
         <>
-          <SummaryBar data={data} />
-          <GuestTable data={data} onSelect={setSelected} onFilteredChange={handleFiltered} />
+          <SummaryBar data={data} activeStatus={statusFilter} onStatusClick={setStatusFilter} />
+          <GuestTable data={data} onSelect={setSelected} onFilteredChange={handleFiltered} statusFilter={statusFilter} />
         </>
       )}
 
