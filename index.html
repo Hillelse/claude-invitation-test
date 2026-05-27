@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="fr" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -231,14 +231,14 @@ const TEXT = {
     rsvpBtn:'Confirmer ma présence', scroll:'Défiler',
     invitedBlessing:'Houppa & Soirée',
     invitedSub:"C'est avec une immense joie que nous\nvous invitons à la célébration du mariage\nde nos enfants",
-    groomName:'Hillel', groomParents:'Erik et Yaël Bross',
+    groomName:'Hillel', groomParents:'Erik et Yaël Berros',
     groomNameFr:'Hillel', groomNameHe:'הלל',
     brideName:'Shirel', brideParents:'Steve et Sandrine Assous',
     brideNameFr:'Shirel', brideNameHe:'שיראל',
     detailsKicker:'Les détails',
     dateLabel:'Date', placeLabel:'Lieu', timeLabel:'Heure',
     dateMain:'09.08.2026', dateSub:'Dimanche · 9 Août',
-    placeMain:'Gaïa', placeSub:'Hadera, Israël',
+    placeMain:'Gaya', placeSub:'Hadera, Israël',
     timeMain:'18:30', timeSub:"Cocktail · Houppa à 19h00",
     countdownKicker:'Le compte à rebours',
     days:'Jours', hours:'Heures', mins:'Minutes', secs:'Secondes',
@@ -250,7 +250,7 @@ const TEXT = {
       ["22:00","Soirée dansante","DJ Sarko jusqu'au bout de la nuit"],
     ],
     mapKicker:"L'adresse",
-    venueName:'Gaïa', venueLine:'Salle de réception Gaïa\nHadera, Israël',
+    venueName:'Gaya', venueLine:'Salle de réception Gaya\nHadera, Israël',
     navWaze:'Waze', navGoogle:'Google Maps',
     galleryKicker:'Souvenirs',
     rsvpKicker:'RSVP', rsvpDeadline:'Merci de confirmer avant le 01.07.2026',
@@ -258,7 +258,7 @@ const TEXT = {
     fYes:'Oui,\navec plaisir', fNo:'Nous ne\npourrons pas',
     fGuests:"Nombre d'invités", fPref:'Préférence',
     prefRegular:'Standard', prefVegan:'Végan', prefKosher:'Casher Mehadrin',
-    fNotes:'Un mot doux pour les mariés', fNotesPh:'Un vœu, un souvenir, ou juste un mot...',
+    fNotes:'Un petit mot pour les mariés', fNotesPh:'Un vœu, un souvenir, ou juste un mot...',
     fSubmit:'Envoyer',
     thanks:'Merci infiniment !', thanksSub:'Nous avons bien reçu votre réponse. À très bientôt — 09.08.2026',
     footerSign:'à très bientôt...',
@@ -747,7 +747,7 @@ const Ic = {
    APP
 ══════════════════════════════════════════ */
 function App() {
-  const [lang, setLang] = React.useState('he');
+  const [lang, setLang] = React.useState('fr');
   const t   = TEXT[lang];
   const dir = lang === 'he' ? 'rtl' : 'ltr';
   const isHe = lang === 'he';
