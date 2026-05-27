@@ -190,7 +190,7 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid var(--line)', background: 'var(--cream-deep)' }}>
             <span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{sorted.length} {t.results}</span>
             {pages > 1 && (
-              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center', direction: 'ltr' }}>
                 <button disabled={page === 0} onClick={() => setPage(p => p - 1)}
                   style={{ height: 28, padding: '0 10px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 6, fontSize: 12, cursor: page === 0 ? 'not-allowed' : 'pointer', opacity: page === 0 ? 0.4 : 1, fontFamily: 'var(--font-ui)' }}>{t.prev}</button>
                 <span style={{ padding: '0 8px', fontSize: 12, color: 'var(--ink-soft)' }}>{page + 1} / {pages}</span>
