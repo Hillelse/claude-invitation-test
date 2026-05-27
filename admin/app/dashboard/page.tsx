@@ -77,8 +77,8 @@ export default function DashboardPage() {
   const handleAdded    = (r: Rsvp)   => setData(d => [r, ...d]);
   const handleFiltered = useCallback((rows: Rsvp[]) => { filteredRef.current = rows; }, []);
 
-  const toggleBulkId  = useCallback((id: number) => setBulkIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
-  const toggleBulkAll = useCallback((ids: number[], selectAll: boolean) => setBulkIds(prev => { const n = new Set(prev); ids.forEach(id => selectAll ? n.add(id) : n.delete(id)); return n; }), []);
+  const toggleBulkId  = useCallback((id: number) => setBulkIds(prev => { const n = new Set(prev); if (n.has(id)) { n.delete(id); } else { n.add(id); } return n; }), []);
+  const toggleBulkAll = useCallback((ids: number[], selectAll: boolean) => setBulkIds(prev => { const n = new Set(prev); ids.forEach(id => { if (selectAll) { n.add(id); } else { n.delete(id); } }); return n; }), []);
 
   const handleBulkConfirm = async () => {
     setBulkSaving(true);
