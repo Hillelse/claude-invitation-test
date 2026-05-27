@@ -879,11 +879,11 @@ function App() {
         </div>
         <div className="gallery-grid" style={{maxWidth:980,margin:'0 auto',display:'grid',gridTemplateColumns:'repeat(3,1fr)',gridTemplateRows:'auto auto',gap:12}}>
           {[
-            {row:'span 2',ratio:'3/4',label:'01 · Portrait'},
-            {ratio:'4/3',label:'02 · Together'},
-            {ratio:'4/3',label:'03 · Moment'},
-            {ratio:'4/3',label:'04 · Detail'},
-            {ratio:'4/3',label:'05 · Sunset'},
+            {row:'span 2',src:'./photos/site-1.jpg',ratio:'3/4'},
+            {src:'./photos/site-2.jpg',ratio:'4/3'},
+            {src:'./photos/site-3.HEIC',ratio:'4/3'},
+            {src:'./photos/site-4.HEIC',ratio:'4/3'},
+            {src:'./photos/site-5.PNG',ratio:'4/3'},
           ].map((p,i) => {
             const ref = React.useRef(null);
             React.useEffect(() => {
@@ -897,7 +897,7 @@ function App() {
             return (
               <div key={i} className="gallery-wrap" style={{gridRow:p.row||'auto',opacity:0,transform:'scale(0.93)'}}>
                 <div ref={ref} style={{width:'100%',height:'100%'}}>
-                  <div className="photo-placeholder" style={{aspectRatio:p.ratio,width:'100%'}}>{p.label}</div>
+                  <img src={p.src} style={{width:'100%',aspectRatio:p.ratio,objectFit:'cover',display:'block'}} loading="lazy"/>
                 </div>
                 <div className="gallery-overlay"/>
               </div>
