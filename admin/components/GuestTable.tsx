@@ -9,6 +9,10 @@ type Props = {
   onSelect: (r: Rsvp) => void;
   onFilteredChange: (rows: Rsvp[]) => void;
   statusFilter?: string | null;
+  selectedIds?: Set<number>;
+  onToggleId?: (id: number) => void;
+  onToggleAll?: (ids: number[], selectAll: boolean) => void;
+  duplicateIds?: Set<number>;
 };
 
 const PAGE_SIZE = 50;
@@ -20,7 +24,7 @@ function resolveStatus(r: Rsvp) {
   return 'Pending';
 }
 
-export default function GuestTable({ data, onSelect, onFilteredChange, statusFilter }: Props) {
+export default function GuestTable({ data, onSelect, onFilteredChange, statusFilter, selectedIds, onToggleId, onToggleAll, duplicateIds }: Props) {
   const { t } = useLang();
   const [search, setSearch]             = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -48,9 +52,20 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { onFilteredChange(filtered); }, [filtered.length, data.length]);
 
-  const pages = Math.ceil(filtered.length / PAGE_SIZE);
-  const rows  = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const isPendingView = filterStatus === 'Pending';
+  const sorted = isPendingView
+    ? [...filtered].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    : filtered;
+
+  const now = Date.now();
+  const daysSince = (iso: string) => Math.floor((now - new Date(iso).getTime()) / 86_400_000);
+
+  const pages = Math.ceil(sorted.length / PAGE_SIZE);
+  const rows  = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const reset = (fn: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { fn(e.target.value); setPage(0); };
+
+  const allOnPageSelected = onToggleId !== undefined && rows.length > 0 && rows.every(r => selectedIds?.has(r.id));
+  const someOnPageSelected = onToggleId !== undefined && rows.some(r => selectedIds?.has(r.id));
 
   const selStyle: React.CSSProperties = {
     height: 36, padding: '0 12px', background: 'var(--surface)',
@@ -89,6 +104,11 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
           <option value="vegan">{t.mealVegan}</option>
           <option value="kosher">{t.mealKosher}</option>
         </select>
+        {isPendingView && (
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#EA580C', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 6, padding: '0 8px', height: 36, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
+            ⏳ {t.pendingOldest}
+          </span>
+        )}
       </div>
 
       {rows.length === 0 ? (
@@ -102,9 +122,20 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: 'var(--cream-deep)' }}>
+                  {onToggleId && (
+                    <th style={{ padding: '10px 6px 10px 14px', width: 36, borderBottom: '1px solid var(--line)' }}>
+                      <input
+                        type="checkbox"
+                        checked={allOnPageSelected}
+                        ref={el => { if (el) el.indeterminate = someOnPageSelected && !allOnPageSelected; }}
+                        onChange={() => onToggleAll?.(rows.map(r => r.id), !allOnPageSelected)}
+                        style={{ cursor: 'pointer', width: 14, height: 14, accentColor: 'var(--green)' }}
+                      />
+                    </th>
+                  )}
                   {[t.colNum, t.colName, t.colPhone, t.colGuests, t.colMeal, t.colAttending, t.colStatus, t.colSubmitted].map(h => (
                     <th key={h} style={{
-                      textAlign: 'left', fontSize: 11, fontWeight: 600,
+                      textAlign: 'start', fontSize: 11, fontWeight: 600,
                       color: 'var(--ink-soft)', textTransform: 'uppercase',
                       letterSpacing: '0.05em', padding: '10px 14px',
                       borderBottom: '1px solid var(--line)', whiteSpace: 'nowrap',
@@ -114,30 +145,50 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => (
+                {rows.map((r, i) => {
+                  const isChecked = selectedIds?.has(r.id) ?? false;
+                  return (
                   <tr key={r.id} onClick={() => onSelect(r)}
-                    style={{ cursor: 'pointer', transition: 'background 0.1s', borderBottom: '1px solid var(--line)' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-hover)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                    style={{ cursor: 'pointer', transition: 'background 0.1s', borderBottom: '1px solid var(--line)', background: isChecked ? 'rgba(79,107,82,0.07)' : 'transparent' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = isChecked ? 'rgba(79,107,82,0.12)' : 'var(--surface-hover)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = isChecked ? 'rgba(79,107,82,0.07)' : 'transparent')}>
+                    {onToggleId && (
+                      <td style={{ padding: '11px 6px 11px 14px', width: 36 }}
+                        onClick={e => { e.stopPropagation(); onToggleId(r.id); }}>
+                        <input type="checkbox" checked={isChecked} onChange={() => {}}
+                          style={{ cursor: 'pointer', width: 14, height: 14, accentColor: 'var(--green)', pointerEvents: 'none' }} />
+                      </td>
+                    )}
                     <td style={{ padding: '11px 14px', color: 'var(--ink-muted)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{page * PAGE_SIZE + i + 1}</td>
                     <td style={{ padding: '11px 14px', fontWeight: 600, color: 'var(--ink)' }}>{r.name}</td>
-                    <td style={{ padding: '11px 14px', color: 'var(--ink-soft)', fontVariantNumeric: 'tabular-nums' }}>{r.phone}</td>
+                    <td style={{ padding: '11px 14px', color: 'var(--ink-soft)', fontVariantNumeric: 'tabular-nums' }}>
+                      {r.phone}
+                      {duplicateIds?.has(r.id) && <span title={t.duplicatePhoneWarning} style={{ marginInlineStart: 5, color: '#DC2626', fontSize: 12 }}>⚠</span>}
+                    </td>
                     <td style={{ padding: '11px 14px', textAlign: 'center', fontWeight: 500 }}>{r.guests}</td>
                     <td style={{ padding: '11px 14px', color: 'var(--ink-soft)' }}>{PREF_LABELS[r.pref] ?? r.pref}</td>
                     <td style={{ padding: '11px 14px', color: r.attending === 'yes' ? '#16A34A' : r.attending === 'no' ? '#DC2626' : 'var(--ink-muted)', fontWeight: 500 }}>
                       {r.attending === 'yes' ? t.attendingYes : r.attending === 'no' ? t.attendingNo : '—'}
                     </td>
                     <td style={{ padding: '11px 14px' }}><StatusBadge status={r.status} attending={r.attending} /></td>
-                    <td style={{ padding: '11px 14px', color: 'var(--ink-muted)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{new Date(r.created_at).toLocaleDateString()}</td>
+                    <td style={{ padding: '11px 14px', color: 'var(--ink-muted)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
+                      {new Date(r.created_at).toLocaleDateString()}
+                      {resolveStatus(r) === 'Pending' && (
+                        <span style={{ marginInlineStart: 6, padding: '1px 5px', background: '#FFF7ED', color: '#EA580C', borderRadius: 4, fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          {t.daysAgo(daysSince(r.created_at))}
+                        </span>
+                      )}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           {/* Footer */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid var(--line)', background: 'var(--cream-deep)' }}>
-            <span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{filtered.length} {t.results}</span>
+            <span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{sorted.length} {t.results}</span>
             {pages > 1 && (
               <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                 <button disabled={page === 0} onClick={() => setPage(p => p - 1)}

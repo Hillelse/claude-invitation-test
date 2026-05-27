@@ -3,6 +3,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useLang } from '@/app/providers';
+import HistoryLogPanel from '@/components/HistoryLogPanel';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -75,7 +76,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
 
-      <main style={{ padding: 'clamp(16px, 4vw, 40px)', paddingBottom: 64, fontFamily: 'var(--font-ui)' }}>{children}</main>
+      <main style={{ padding: 'clamp(16px, 4vw, 40px)', paddingBottom: 96, fontFamily: 'var(--font-ui)' }}>{children}</main>
+      <HistoryLogPanel />
 
       <style>{`
         @media (min-width: 640px) { .nav-desktop { display: flex !important; } .nav-mobile { display: none !important; } }

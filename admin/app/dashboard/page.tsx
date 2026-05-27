@@ -1,10 +1,11 @@
 'use client';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { supabase, Rsvp } from '@/lib/supabase';
 import SummaryBar from '@/components/SummaryBar';
 import GuestTable from '@/components/GuestTable';
 import GuestDetailPanel from '@/components/GuestDetailPanel';
 import AddGuestModal from '@/components/AddGuestModal';
+import ImportPreviewModal, { PreviewRow } from '@/components/ImportPreviewModal';
 import Toast, { ToastMsg } from '@/components/Toast';
 import { useLang } from '@/app/providers';
 import { normalizePhone } from '@/lib/validation';
@@ -19,6 +20,10 @@ export default function DashboardPage() {
   const [toasts, setToasts]         = useState<ToastMsg[]>([]);
   const [live, setLive]             = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [bulkIds, setBulkIds]       = useState<Set<number>>(new Set());
+  const [confirmBulkDel, setConfirmBulkDel] = useState(false);
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [importPreview, setImportPreview] = useState<PreviewRow[] | null>(null);
   const filteredRef                 = useRef<Rsvp[]>([]);
   const importRef                   = useRef<HTMLInputElement>(null);
 
@@ -55,10 +60,55 @@ export default function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const duplicateIds = useMemo(() => {
+    const phoneMap = new Map<string, number[]>();
+    data.forEach(r => {
+      const norm = normalizePhone(r.phone);
+      if (!phoneMap.has(norm)) phoneMap.set(norm, []);
+      phoneMap.get(norm)!.push(r.id);
+    });
+    const ids = new Set<number>();
+    phoneMap.forEach(list => { if (list.length > 1) list.forEach(id => ids.add(id)); });
+    return ids;
+  }, [data]);
+
   const handleUpdate   = (u: Rsvp)  => { setData(d => d.map(r => r.id === u.id ? u : r)); setSelected(u); };
   const handleDelete   = (id: number) => setData(d => d.filter(r => r.id !== id));
   const handleAdded    = (r: Rsvp)   => setData(d => [r, ...d]);
   const handleFiltered = useCallback((rows: Rsvp[]) => { filteredRef.current = rows; }, []);
+
+  const toggleBulkId  = useCallback((id: number) => setBulkIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
+  const toggleBulkAll = useCallback((ids: number[], selectAll: boolean) => setBulkIds(prev => { const n = new Set(prev); ids.forEach(id => selectAll ? n.add(id) : n.delete(id)); return n; }), []);
+
+  const handleBulkConfirm = async () => {
+    setBulkSaving(true);
+    const ids = Array.from(bulkIds);
+    const { error } = await supabase.from('rsvp').update({ status: 'Confirmed' }).in('id', ids);
+    if (error) { toast(error.message, 'error'); setBulkSaving(false); return; }
+    setData(d => d.map(r => bulkIds.has(r.id) ? { ...r, status: 'Confirmed' } : r));
+    toast(t.bulkConfirmed(ids.length));
+    setBulkIds(new Set()); setBulkSaving(false);
+  };
+
+  const handleBulkDecline = async () => {
+    setBulkSaving(true);
+    const ids = Array.from(bulkIds);
+    const { error } = await supabase.from('rsvp').update({ status: 'Declined' }).in('id', ids);
+    if (error) { toast(error.message, 'error'); setBulkSaving(false); return; }
+    setData(d => d.map(r => bulkIds.has(r.id) ? { ...r, status: 'Declined' } : r));
+    toast(t.bulkDeclined(ids.length));
+    setBulkIds(new Set()); setBulkSaving(false);
+  };
+
+  const handleBulkDelete = async () => {
+    setBulkSaving(true);
+    const ids = Array.from(bulkIds);
+    const { error } = await supabase.from('rsvp').delete().in('id', ids);
+    if (error) { toast(error.message, 'error'); setBulkSaving(false); return; }
+    setData(d => d.filter(r => !bulkIds.has(r.id)));
+    toast(t.bulkDeleted(ids.length));
+    setBulkIds(new Set()); setConfirmBulkDel(false); setBulkSaving(false);
+  };
 
   const importXlsx = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -77,31 +127,45 @@ export default function DashboardPage() {
         }
         return '';
       };
-      const records = rows.map(row => ({
-        name: findVal(row, 'name', 'שם', 'fullname', 'שםמלא', 'nom'),
-        phone: normalizePhone(findVal(row, 'phone', 'טלפון', 'mobile', 'נייד', 'tel', 'téléphone', 'cellulaire')),
-        guests: Number(findVal(row, 'guests', 'אורחים', 'כמות', 'מספר', 'invités', 'nb', 'number', 'nbguests', 'nombre')) || 1,
-        attending: 'pending',
-        pref: 'regular',
-        status: 'Pending',
-        notes: null as null,
-        internal_notes: null as null,
-      })).filter(r => r.name && r.phone);
-      if (!records.length) { toast('No valid rows found', 'error'); return; }
+      const parsed = rows.map(row => {
+        const rawPref = findVal(row, 'pref', 'meal', 'repas', 'תפריט').toLowerCase();
+        const pref = ['vegan', 'kosher', 'regular'].includes(rawPref) ? rawPref : 'regular';
+        const rawAtt = findVal(row, 'attending', 'présence', 'הגעה', 'rsvp').toLowerCase();
+        const attending = rawAtt === 'yes' || rawAtt === 'oui' || rawAtt === 'כן' ? 'yes'
+          : rawAtt === 'no' || rawAtt === 'non' || rawAtt === 'לא' ? 'no' : 'pending';
+        const rawPhone = findVal(row, 'phone', 'טלפון', 'mobile', 'נייד', 'tel', 'téléphone', 'cellulaire');
+        return {
+          name: findVal(row, 'name', 'שם', 'fullname', 'שםמלא', 'nom'),
+          phone: rawPhone,
+          normPhone: normalizePhone(rawPhone),
+          guests: Number(findVal(row, 'guests', 'אורחים', 'כמות', 'מספר', 'invités', 'nb', 'number', 'nbguests', 'nombre')) || 1,
+          pref, attending, isDuplicate: false,
+        };
+      }).filter(r => r.name && r.phone);
+      if (!parsed.length) { toast('No valid rows found', 'error'); return; }
       const { data: existing } = await supabase.from('rsvp').select('phone');
       const existingPhones = new Set((existing ?? []).map((r: { phone: string }) => normalizePhone(r.phone)));
-      const newRecords = records.filter(r => !existingPhones.has(normalizePhone(r.phone)));
-      if (!newRecords.length) { toast(t.importAllExist(records.length), 'error'); return; }
-      const { data: inserted, error } = await supabase.from('rsvp').insert(newRecords).select();
-      if (error) { toast(error.message, 'error'); return; }
-      const added = inserted as Rsvp[];
-      setData(d => [...added, ...d]);
-      const who = 'import';
-      await supabase.from('rsvp_audit').insert(added.map(r => ({ rsvp_id: r.id, changed_by: who, summary: t.auditImported })));
-      const skipped = records.length - newRecords.length;
-      toast(t.importDone(newRecords.length, skipped));
+      const preview: PreviewRow[] = parsed.map(r => ({ ...r, isDuplicate: existingPhones.has(r.normPhone) }));
+      setImportPreview(preview);
     };
     reader.readAsBinaryString(file);
+  };
+
+  const doImport = async (rows: PreviewRow[]) => {
+    setImportPreview(null);
+    if (!rows.length) return;
+    const records = rows.map(r => ({
+      name: r.name, phone: r.normPhone, guests: r.guests,
+      attending: r.attending, pref: r.pref,
+      status: r.attending === 'yes' ? 'Confirmed' : r.attending === 'no' ? 'Declined' : 'Pending',
+      notes: null as null, internal_notes: null as null,
+    }));
+    const { data: inserted, error } = await supabase.from('rsvp').insert(records).select();
+    if (error) { toast(error.message, 'error'); return; }
+    const added = inserted as Rsvp[];
+    setData(d => [...added, ...d]);
+    await supabase.from('rsvp_audit').insert(added.map(r => ({ rsvp_id: r.id, changed_by: 'import', summary: t.auditImported })));
+    toast(t.importDone(added.length, 0));
   };
 
   const exportXlsx = () => {
@@ -154,13 +218,35 @@ export default function DashboardPage() {
         <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--ink-soft)', fontSize: 13, letterSpacing: '0.2em' }}>{t.loading}</div>
       ) : (
         <>
-          <SummaryBar data={data} activeStatus={statusFilter} onStatusClick={setStatusFilter} />
-          <GuestTable data={data} onSelect={setSelected} onFilteredChange={handleFiltered} statusFilter={statusFilter} />
+          <SummaryBar data={data} activeStatus={statusFilter} onStatusClick={(s) => { setStatusFilter(s); setBulkIds(new Set()); }} />
+
+          {bulkIds.size > 0 && !confirmBulkDel && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: 'var(--surface)', border: '1px solid var(--green)', borderRadius: 10, marginBottom: 12 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--green-deep)', marginRight: 4 }}>{t.xSelected(bulkIds.size)}</span>
+              <button onClick={handleBulkConfirm} disabled={bulkSaving} style={{ height: 30, padding: '0 12px', background: '#F0FDF4', color: '#16A34A', border: '1px solid #86EFAC', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: bulkSaving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-ui)' }}>{t.bulkConfirm}</button>
+              <button onClick={handleBulkDecline} disabled={bulkSaving} style={{ height: 30, padding: '0 12px', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: bulkSaving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-ui)' }}>{t.bulkDecline}</button>
+              <button onClick={() => setConfirmBulkDel(true)} disabled={bulkSaving} style={{ height: 30, padding: '0 12px', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: bulkSaving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-ui)' }}>{t.bulkDelete}</button>
+              <div style={{ flex: 1 }} />
+              <button onClick={() => setBulkIds(new Set())} style={{ height: 28, width: 28, background: 'none', border: 'none', color: 'var(--ink-soft)', cursor: 'pointer', fontSize: 16, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            </div>
+          )}
+
+          {confirmBulkDel && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, marginBottom: 12 }}>
+              <span style={{ fontSize: 13, color: '#991B1B', fontWeight: 500, flex: 1 }}>{t.confirmBulkDelete(bulkIds.size)}</span>
+              <button onClick={handleBulkDelete} disabled={bulkSaving} style={{ height: 30, padding: '0 14px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: bulkSaving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-ui)' }}>{t.yesDelete}</button>
+              <button onClick={() => setConfirmBulkDel(false)} style={{ height: 30, padding: '0 14px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 6, fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-ui)' }}>{t.cancel}</button>
+            </div>
+          )}
+
+          <GuestTable data={data} onSelect={setSelected} onFilteredChange={handleFiltered} statusFilter={statusFilter}
+            selectedIds={bulkIds} onToggleId={toggleBulkId} onToggleAll={toggleBulkAll} duplicateIds={duplicateIds} />
         </>
       )}
 
-      {selected && <GuestDetailPanel guest={selected} onClose={() => setSelected(null)} onUpdate={handleUpdate} onDelete={handleDelete} toast={toast} />}
+      {selected && <GuestDetailPanel guest={selected} onClose={() => setSelected(null)} onUpdate={handleUpdate} onDelete={handleDelete} toast={toast} isDuplicate={duplicateIds.has(selected.id)} />}
       {showAdd && <AddGuestModal onClose={() => setShowAdd(false)} onAdded={handleAdded} toast={toast} />}
+      {importPreview && <ImportPreviewModal rows={importPreview} onConfirm={doImport} onClose={() => setImportPreview(null)} />}
       <Toast toasts={toasts} remove={removeToast} />
     </>
   );

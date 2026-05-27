@@ -17,9 +17,14 @@ function resolveStatus(r: Rsvp) {
 
 export default function SummaryBar({ data, activeStatus, onStatusClick }: Props) {
   const { t } = useLang();
-  const confirmed = data.filter(r => resolveStatus(r) === 'Confirmed').reduce((s, r) => s + (r.guests || 1), 0);
+  const confirmedRows = data.filter(r => resolveStatus(r) === 'Confirmed');
+  const confirmed = confirmedRows.reduce((s, r) => s + (r.guests || 1), 0);
   const declined  = data.filter(r => resolveStatus(r) === 'Declined').reduce((s, r) => s + (r.guests || 1), 0);
   const pending   = data.filter(r => resolveStatus(r) === 'Pending').reduce((s, r) => s + (r.guests || 1), 0);
+
+  const regular = confirmedRows.filter(r => r.pref === 'regular').reduce((s, r) => s + (r.guests || 1), 0);
+  const vegan   = confirmedRows.filter(r => r.pref === 'vegan').reduce((s, r) => s + (r.guests || 1), 0);
+  const kosher  = confirmedRows.filter(r => r.pref === 'kosher').reduce((s, r) => s + (r.guests || 1), 0);
 
   const cards = [
     { label: t.totalRsvps, value: data.reduce((s, r) => s + (r.guests || 1), 0), accent: 'var(--green)',     bg: 'rgba(79,107,82,0.08)', filter: null },
@@ -28,29 +33,50 @@ export default function SummaryBar({ data, activeStatus, onStatusClick }: Props)
     { label: t.pending,    value: pending,     accent: '#EA580C',           bg: '#FFF7ED',              filter: 'Pending' },
   ];
 
+  const mealCards = [
+    { label: t.mealRegular, value: regular, accent: '#4F6B52' },
+    { label: t.mealVegan,   value: vegan,   accent: '#0891B2' },
+    { label: t.mealKosher,  value: kosher,  accent: '#7C3AED' },
+  ];
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}>
-      {cards.map(c => {
-        const isActive = activeStatus === c.filter || (c.filter === null && activeStatus === null);
-        return (
-          <div key={c.label} onClick={() => onStatusClick?.(isActive && c.filter !== null ? null : c.filter)}
-            style={{
-              background: isActive ? c.bg : 'var(--surface)',
-              border: `1px solid ${isActive ? c.accent : 'var(--line)'}`,
-              borderRadius: 12, padding: '16px 18px',
-              display: 'flex', flexDirection: 'column', gap: 4,
-              cursor: onStatusClick ? 'pointer' : 'default',
-              transition: 'border-color 0.15s, background 0.15s',
-            }}>
-            <span style={{ fontSize: 11, fontWeight: 500, color: isActive ? c.accent : 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              {c.label}
-            </span>
-            <span style={{ fontSize: 28, fontWeight: 700, color: c.accent, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
-              {c.value}
-            </span>
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 10 }}>
+        {cards.map(c => {
+          const isActive = activeStatus === c.filter || (c.filter === null && activeStatus === null);
+          return (
+            <div key={c.label} onClick={() => onStatusClick?.(isActive && c.filter !== null ? null : c.filter)}
+              style={{
+                background: isActive ? c.bg : 'var(--surface)',
+                border: `1px solid ${isActive ? c.accent : 'var(--line)'}`,
+                borderRadius: 12, padding: '16px 18px',
+                display: 'flex', flexDirection: 'column', gap: 4,
+                cursor: onStatusClick ? 'pointer' : 'default',
+                transition: 'border-color 0.15s, background 0.15s',
+              }}>
+              <span style={{ fontSize: 11, fontWeight: 500, color: isActive ? c.accent : 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {c.label}
+              </span>
+              <span style={{ fontSize: 28, fontWeight: 700, color: c.accent, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+                {c.value}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Catering breakdown — confirmed guests only */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 16px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10 }}>
+        <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginInlineEnd: 6, whiteSpace: 'nowrap' }}>
+          🍽 {t.confirmed}
+        </span>
+        {mealCards.map(m => (
+          <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'var(--cream-deep)', borderRadius: 6 }}>
+            <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{m.label}</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: m.accent, fontVariantNumeric: 'tabular-nums' }}>{m.value}</span>
           </div>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { supabase, Rsvp, RsvpAudit } from '@/lib/supabase';
 import StatusBadge from './StatusBadge';
 import { useLang } from '@/app/providers';
 import { isValidPhone } from '@/lib/validation';
+import { translateSummary } from '@/lib/translateSummary';
 
 type Props = {
   guest: Rsvp;
@@ -12,9 +13,10 @@ type Props = {
   onUpdate: (updated: Rsvp) => void;
   onDelete: (id: number) => void;
   toast: (text: string, type?: 'success' | 'error') => void;
+  isDuplicate?: boolean;
 };
 
-export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, toast }: Props) {
+export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, toast, isDuplicate }: Props) {
   const { t } = useLang();
   const { data: session } = useSession();
   const [editing, setEditing]         = useState(false);
@@ -31,23 +33,15 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
 
   const PREF_LABELS: Record<string, string> = { regular: t.mealRegular, vegan: t.mealVegan, kosher: t.mealKosher };
 
-  const translateSummary = (s: string) => {
-    if (t.dir === 'rtl') return s;
-    return s
-      .replace('מילא טופס לראשונה', 'Rempli pour la 1ère fois')
-      .replace('מילא טופס · אישר פרטים', 'Formulaire · Détails confirmés')
-      .replace('מילא טופס', 'Formulaire rempli')
-      .replace('אישר פרטים', 'Détails confirmés')
-      .replace('אורחים:', 'Invités:')
-      .replace('תפריט:', 'Repas:')
-      .replace('הגעה:', 'Présence:')
-      .replace('סטטוס:', 'Statut:')
-      .replace('שם:', 'Nom:')
-      .replace('טלפון:', 'Tél:')
-      .replace('נוסף ידנית', 'Ajouté manuellement')
-      .replace('יובא מקובץ', 'Importé depuis fichier')
-      .replace('רשומה נוצרה', 'Entrée créée');
-  };
+  const waHref = (() => {
+    if (!guest.phone) return null;
+    const digits = guest.phone.replace(/\D/g, '');
+    const intl = digits.startsWith('972') ? digits : digits.startsWith('0') ? '972' + digits.slice(1) : digits;
+    const msg = encodeURIComponent(t.whatsAppMessage(guest.name));
+    return `https://wa.me/${intl}?text=${msg}`;
+  })();
+
+  const ts = (s: string) => translateSummary(s, t.dir);
 
   const upd = (k: keyof Rsvp) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
@@ -128,6 +122,11 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
         <div style={{ padding: '20px 24px 8px' }}>
           {!editing ? (
             <>
+              {isDuplicate && (
+                <div style={{ marginBottom: 14, padding: '10px 12px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, fontSize: 12, color: '#DC2626', fontWeight: 500 }}>
+                  {t.duplicatePhoneWarning}
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
                 <Field label={t.fieldPhone} val={guest.phone} mono />
                 <Field label={t.fieldAttending} val={guest.attending === 'yes' ? t.filterYes : guest.attending === 'no' ? t.filterNo : '—'} />
@@ -149,6 +148,11 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
                 </div>
               </div>
 
+              {waHref && (
+                <a href={waHref} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 36, marginTop: 8, background: '#25D366', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>
+                  {t.whatsAppBtn}
+                </a>
+              )}
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                 <button onClick={() => setEditing(true)} style={{ flex: 1, height: 36, background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-ui)' }}>{t.edit}</button>
                 <button onClick={() => setConfirm(true)} style={{ flex: 1, height: 36, background: 'transparent', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-ui)' }}>{t.delete}</button>
@@ -219,7 +223,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
                 {new Date(h.changed_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}
               </span>
               <span style={{ fontWeight: 600, color: 'var(--green-deep)' }}>{h.changed_by}</span>
-              <span>{translateSummary(h.summary)}</span>
+              <span>{ts(h.summary)}</span>
             </div>
           ))}
           <div style={{ fontSize: 11, color: 'var(--ink-soft)', marginBottom: 6, display: 'flex', gap: 6, flexWrap: 'wrap', lineHeight: 1.4, opacity: 0.6 }}>
