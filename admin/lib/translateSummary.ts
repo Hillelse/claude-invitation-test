@@ -1,3 +1,15 @@
+/**
+ * Split a summary string into parts, wrapping `NUMBER→NUMBER` sequences
+ * in isolated LTR spans to prevent RTL bidi reversal in Hebrew UI.
+ * Returns an array of strings and JSX-compatible objects; use renderSummaryParts() in JSX.
+ */
+export type SummaryPart = { type: 'text'; value: string } | { type: 'ltr'; value: string };
+
+export function splitSummaryParts(s: string): SummaryPart[] {
+  const parts = s.split(/(\d[\d\s\-]*→[\d\s\-]*\d)/);
+  return parts.map(p => (/→/.test(p) && /\d/.test(p) ? { type: 'ltr', value: p } : { type: 'text', value: p }));
+}
+
 export function translateSummary(s: string, dir: 'ltr' | 'rtl'): string {
   if (dir === 'rtl') return s;
   return s

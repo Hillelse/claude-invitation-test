@@ -5,7 +5,7 @@ import { supabase, Rsvp, RsvpAudit } from '@/lib/supabase';
 import StatusBadge from './StatusBadge';
 import { useLang } from '@/app/providers';
 import { isValidPhone, normalizePhone } from '@/lib/validation';
-import { translateSummary } from '@/lib/translateSummary';
+import { translateSummary, splitSummaryParts } from '@/lib/translateSummary';
 
 type Props = {
   guest: Rsvp;
@@ -64,12 +64,14 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
     }).eq('id', guest.id);
     if (error) { setSaving(false); toast(error.message, 'error'); return; }
     const diff: string[] = [];
+    // wrap numeric changes in LTR embedding to prevent bidi reversal in RTL UI
+    const ltr = (a: unknown, b: unknown) => '‪' + a + '→' + b + '‬';
     if (form.name !== guest.name)               diff.push(`שם: ${guest.name}→${form.name}`);
     if (form.attending !== guest.attending)      diff.push(`הגעה: ${guest.attending}→${form.attending}`);
-    if (Number(form.guests) !== guest.guests)   diff.push(`אורחים: ${guest.guests}→${form.guests}`);
+    if (Number(form.guests) !== guest.guests)   diff.push(`אורחים: ${ltr(guest.guests, form.guests)}`);
     if (form.status !== guest.status)           diff.push(`סטטוס: ${guest.status}→${form.status}`);
     if (form.pref !== guest.pref)               diff.push(`תפריט: ${guest.pref}→${form.pref}`);
-    if (form.phone !== guest.phone)             diff.push(`טלפון: ${guest.phone}→${form.phone}`);
+    if (form.phone !== guest.phone)             diff.push(`טלפון: ${ltr(guest.phone, form.phone)}`);
     if (diff.length > 0) {
       const entry = { rsvp_id: guest.id, changed_by: session?.user?.name ?? 'admin', summary: diff.join(' · ') };
       const { error: auditErr } = await supabase.from('rsvp_audit').insert(entry);
@@ -231,7 +233,11 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
                 {new Date(h.changed_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}
               </span>
               <span style={{ fontWeight: 600, color: 'var(--green-deep)' }}>{h.changed_by}</span>
-              <span>{ts(h.summary)}</span>
+              <span>{splitSummaryParts(ts(h.summary)).map((p, i) =>
+                p.type === 'ltr'
+                  ? <span key={i} style={{ unicodeBidi: 'isolate', direction: 'ltr', display: 'inline-block' }}>{p.value}</span>
+                  : <span key={i}>{p.value}</span>
+              )}</span>
             </div>
           ))}
           <div style={{ fontSize: 11, color: 'var(--ink-soft)', marginBottom: 6, display: 'flex', gap: 6, flexWrap: 'wrap', lineHeight: 1.4, opacity: 0.6 }}>

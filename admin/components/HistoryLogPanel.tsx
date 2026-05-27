@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { supabase, RsvpAudit } from '@/lib/supabase';
 import { useLang } from '@/app/providers';
-import { translateSummary } from '@/lib/translateSummary';
+import { translateSummary, splitSummaryParts } from '@/lib/translateSummary';
 
 type AuditEntry = RsvpAudit & { guestName: string };
 
@@ -116,7 +116,11 @@ export default function HistoryLogPanel() {
                   </span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
-                  {translateSummary(e.summary, t.dir)}
+                  {splitSummaryParts(translateSummary(e.summary, t.dir)).map((p, i) =>
+                    p.type === 'ltr'
+                      ? <span key={i} style={{ unicodeBidi: 'isolate', direction: 'ltr', display: 'inline-block' }}>{p.value}</span>
+                      : <span key={i}>{p.value}</span>
+                  )}
                 </div>
               </div>
             ))
