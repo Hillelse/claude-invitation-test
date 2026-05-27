@@ -44,8 +44,8 @@ export const TEXT = {
     mealKosher: 'כשר',
 
     results: 'תוצאות',
-    prev: '→ הקודם',
-    next: 'הבא ←',
+    prev: '← הקודם',
+    next: 'הבא →',
 
     noRsvps: 'אין הגעות עדיין',
     noResults: 'אין תוצאות לפילטר הנוכחי',

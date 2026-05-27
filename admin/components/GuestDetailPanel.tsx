@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { supabase, Rsvp, RsvpAudit } from '@/lib/supabase';
 import StatusBadge from './StatusBadge';
 import { useLang } from '@/app/providers';
-import { isValidPhone } from '@/lib/validation';
+import { isValidPhone, normalizePhone } from '@/lib/validation';
 import { translateSummary } from '@/lib/translateSummary';
 
 type Props = {
@@ -35,8 +35,16 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
 
   const waHref = (() => {
     if (!guest.phone) return null;
-    const digits = guest.phone.replace(/\D/g, '');
-    const intl = digits.startsWith('972') ? digits : digits.startsWith('0') ? '972' + digits.slice(1) : digits;
+    const local = normalizePhone(guest.phone); // strips country prefix → local 0xxx format
+    const digits = local.replace(/\D/g, '');
+    let intl: string;
+    if (digits.startsWith('06') || digits.startsWith('07')) {
+      intl = '33' + digits.slice(1);        // French mobile
+    } else if (digits.startsWith('0')) {
+      intl = '972' + digits.slice(1);       // Israeli (05x, 02-09)
+    } else {
+      intl = digits;                        // already international (no leading 0)
+    }
     const msg = encodeURIComponent(t.whatsAppMessage(guest.name));
     return `https://wa.me/${intl}?text=${msg}`;
   })();
