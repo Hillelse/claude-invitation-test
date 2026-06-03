@@ -1,5 +1,15 @@
 {
-  "buildCommand": null,
-  "outputDirectory": ".",
-  "framework": null
+  "version": 2,
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "uploads/**", "use": "@vercel/static" },
+    { "src": "assets/**", "use": "@vercel/static" },
+    { "src": "photos/**", "use": "@vercel/static" },
+    { "src": "logo-site.svg", "use": "@vercel/static" },
+    { "src": "*.css", "use": "@vercel/static" },
+    { "src": "*.jsx", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/", "dest": "/index.html" }
+  ]
 }
