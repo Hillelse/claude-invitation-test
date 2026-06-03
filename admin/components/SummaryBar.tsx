@@ -6,6 +6,8 @@ type Props = {
   data: Rsvp[];
   activeStatus?: string | null;
   onStatusClick?: (status: string | null) => void;
+  activeSide?: string | null;
+  onSideClick?: (side: string | null) => void;
 };
 
 function resolveStatus(r: Rsvp) {
@@ -15,7 +17,7 @@ function resolveStatus(r: Rsvp) {
   return 'Pending';
 }
 
-export default function SummaryBar({ data, activeStatus, onStatusClick }: Props) {
+export default function SummaryBar({ data, activeStatus, onStatusClick, activeSide, onSideClick }: Props) {
   const { t } = useLang();
   const confirmedRows = data.filter(r => resolveStatus(r) === 'Confirmed');
   const confirmed = confirmedRows.reduce((s, r) => s + (r.guests || 1), 0);
@@ -87,11 +89,13 @@ export default function SummaryBar({ data, activeStatus, onStatusClick }: Props)
         <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginInlineEnd: 6, whiteSpace: 'nowrap' }}>
           👥 {t.fieldSide}
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#DBEAFE', borderRadius: 6 }}>
+        <div onClick={() => onSideClick?.(activeSide === 'groom' ? null : 'groom')}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#DBEAFE', borderRadius: 6, cursor: onSideClick ? 'pointer' : 'default', border: activeSide === 'groom' ? '2px solid #1D4ED8' : '2px solid transparent', transition: 'border-color 0.15s' }}>
           <span style={{ fontSize: 11, color: '#1D4ED8' }}>{t.sideGroom}</span>
           <span style={{ fontSize: 15, fontWeight: 700, color: '#1D4ED8', fontVariantNumeric: 'tabular-nums' }}>{groomCount}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#FCE7F3', borderRadius: 6 }}>
+        <div onClick={() => onSideClick?.(activeSide === 'bride' ? null : 'bride')}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#FCE7F3', borderRadius: 6, cursor: onSideClick ? 'pointer' : 'default', border: activeSide === 'bride' ? '2px solid #BE185D' : '2px solid transparent', transition: 'border-color 0.15s' }}>
           <span style={{ fontSize: 11, color: '#BE185D' }}>{t.sideBride}</span>
           <span style={{ fontSize: 15, fontWeight: 700, color: '#BE185D', fontVariantNumeric: 'tabular-nums' }}>{brideCount}</span>
         </div>

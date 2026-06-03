@@ -9,6 +9,8 @@ type Props = {
   onSelect: (r: Rsvp) => void;
   onFilteredChange: (rows: Rsvp[]) => void;
   statusFilter?: string | null;
+  sideFilter?: string | null;
+  onFilterSideChange?: (side: string) => void;
   selectedIds?: Set<number>;
   onToggleId?: (id: number) => void;
   onToggleAll?: (ids: number[], selectAll: boolean) => void;
@@ -24,7 +26,7 @@ function resolveStatus(r: Rsvp) {
   return 'Pending';
 }
 
-export default function GuestTable({ data, onSelect, onFilteredChange, statusFilter, selectedIds, onToggleId, onToggleAll, duplicateIds }: Props) {
+export default function GuestTable({ data, onSelect, onFilteredChange, statusFilter, sideFilter, onFilterSideChange, selectedIds, onToggleId, onToggleAll, duplicateIds }: Props) {
   const { t } = useLang();
   const [search, setSearch]             = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -37,6 +39,11 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
     setFilterStatus(statusFilter ?? 'all');
     setPage(0);
   }, [statusFilter]);
+
+  useEffect(() => {
+    setFilterSide(sideFilter ?? 'all');
+    setPage(0);
+  }, [sideFilter]);
 
   const PREF_LABELS: Record<string, string> = { regular: t.mealRegular, vegan: t.mealVegan, kosher: t.mealKosher };
 
@@ -106,7 +113,7 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
           <option value="vegan">{t.mealVegan}</option>
           <option value="kosher">{t.mealKosher}</option>
         </select>
-        <select value={filterSide} onChange={reset(setFilterSide)} style={selStyle}>
+        <select value={filterSide} onChange={e => { setFilterSide(e.target.value); setPage(0); onFilterSideChange?.(e.target.value); }} style={selStyle}>
           <option value="all">{t.filterAllSides}</option>
           <option value="groom">{t.sideGroom}</option>
           <option value="bride">{t.sideBride}</option>
@@ -180,9 +187,11 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
                     <td style={{ padding: '11px 14px' }}><StatusBadge status={r.status} attending={r.attending} /></td>
                     <td style={{ padding: '11px 14px' }}>
                       {r.side === 'groom' ? (
-                        <span style={{ padding: '2px 8px', background: '#DBEAFE', color: '#1D4ED8', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>{t.sideGroom}</span>
+                        <span onClick={e => { e.stopPropagation(); const next = filterSide === 'groom' ? 'all' : 'groom'; setFilterSide(next); setPage(0); onFilterSideChange?.(next); }}
+                          style={{ padding: '2px 8px', background: '#DBEAFE', color: '#1D4ED8', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer' }}>{t.sideGroom}</span>
                       ) : r.side === 'bride' ? (
-                        <span style={{ padding: '2px 8px', background: '#FCE7F3', color: '#BE185D', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>{t.sideBride}</span>
+                        <span onClick={e => { e.stopPropagation(); const next = filterSide === 'bride' ? 'all' : 'bride'; setFilterSide(next); setPage(0); onFilterSideChange?.(next); }}
+                          style={{ padding: '2px 8px', background: '#FCE7F3', color: '#BE185D', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer' }}>{t.sideBride}</span>
                       ) : (
                         <span style={{ color: 'var(--ink-muted)' }}>—</span>
                       )}
