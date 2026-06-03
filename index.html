@@ -840,11 +840,12 @@ function App() {
       </section>
 
       {/* ── MAP ── */}
-      <section style={{padding:'clamp(40px,6vw,60px) clamp(20px,5vw,32px) clamp(60px,10vw,120px)',background:'var(--cream-deep)'}}>
-        <div className="reveal" style={{textAlign:'center',marginBottom:48}}>
+      <section style={{position:'relative',padding:'clamp(40px,6vw,60px) clamp(20px,5vw,32px) clamp(60px,10vw,120px)',background:'var(--cream-deep)',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:"url('./uploads/site-background3.png')",backgroundSize:'cover',backgroundPosition:'center',backgroundRepeat:'no-repeat',opacity:0.1,pointerEvents:'none'}}/>
+        <div className="reveal" style={{position:'relative',zIndex:1,textAlign:'center',marginBottom:48}}>
           <h3 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(28px,3.4vw,38px)',fontWeight:400,color:'var(--ink)'}}>{t.mapKicker}</h3>
         </div>
-        <div className="reveal map-card" style={{maxWidth:480,margin:'0 auto'}}>
+        <div className="reveal map-card" style={{position:'relative',zIndex:1,maxWidth:480,margin:'0 auto'}}>
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="var(--copper)" strokeWidth="1.1" style={{margin:'0 auto 18px',display:'block'}}>
             <path d="M24 6 C 16 6, 10 12, 10 20 C 10 30, 24 42, 24 42 C 24 42, 38 30, 38 20 C 38 12, 32 6, 24 6 Z"/>
             <circle cx="24" cy="20" r="4"/>
