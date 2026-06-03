@@ -133,7 +133,7 @@ html,body{font-family:var(--font-body);color:var(--ink);background:var(--cream);
 
 /* ── Responsive ── */
 @media(max-width:720px){
-  .invite-card{padding:6px 28px 56px!important;}
+  .invite-card{padding:0!important;}
   .details-grid{grid-template-columns:1fr!important;}
   .detail-cell{border-inline-end:none!important;border-bottom:1px solid var(--line)!important;padding:28px 16px!important;}
   .detail-cell:last-child{border-bottom:none!important;}
@@ -147,7 +147,7 @@ html,body{font-family:var(--font-body);color:var(--ink);background:var(--cream);
   .names-grid{grid-template-columns:1fr auto 1fr!important;}
 }
 @media(max-width:500px){
-  .invite-card{padding:5px 18px 40px!important;}
+  .invite-card{padding:0!important;}
   .rsvp-glass{padding:24px 16px!important;}
   .form-row.two-col{grid-template-columns:1fr!important;}
 }
@@ -810,7 +810,7 @@ function App() {
 
       {/* ── COUNTDOWN ── */}
       <section style={{position:'relative',padding:'clamp(60px,10vw,100px) clamp(20px,5vw,32px) clamp(60px,10vw,120px)',background:'var(--cream-deep)',textAlign:'center',overflow:'hidden'}}>
-        <div style={{position:'absolute',inset:0,backgroundImage:"url('./uploads/site-background.png')",backgroundSize:'cover',backgroundPosition:'center',backgroundRepeat:'no-repeat',opacity:0.9,pointerEvents:'none'}}/>
+        <div style={{position:'absolute',inset:0,backgroundImage:"url('./uploads/site-background.png')",backgroundSize:'cover',backgroundPosition:'20% 35%',backgroundRepeat:'no-repeat',opacity:0.9,pointerEvents:'none'}}/>
         <div className="reveal" style={{position:'relative',zIndex:1}}>
           <h3 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(24px,3vw,34px)',fontWeight:400,marginBottom:16,color:'var(--ink)',letterSpacing:'0.04em'}}>{t.countdownKicker}</h3>
           <div style={{marginBottom:44,maxWidth:100,margin:'14px auto 44px'}}><OrnamentSimple/></div>
