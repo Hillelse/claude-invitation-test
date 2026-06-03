@@ -10,6 +10,7 @@ export type Rsvp = {
   notes: string | null;
   status: string | null;
   internal_notes: string | null;
+  side: 'groom' | 'bride' | null;
   created_at: string;
 };
 

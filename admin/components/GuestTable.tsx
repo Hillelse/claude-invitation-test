@@ -30,6 +30,7 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterAtt, setFilterAtt]       = useState('all');
   const [filterPref, setFilterPref]     = useState('all');
+  const [filterSide, setFilterSide]     = useState('all');
   const [page, setPage] = useState(0);
 
   useEffect(() => {
@@ -45,7 +46,8 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
       (!q || r.name.toLowerCase().includes(q) || r.phone.includes(q)) &&
       (filterStatus === 'all' || resolveStatus(r) === filterStatus) &&
       (filterAtt === 'all'    || r.attending === filterAtt) &&
-      (filterPref === 'all'   || r.pref === filterPref)
+      (filterPref === 'all'   || r.pref === filterPref) &&
+      (filterSide === 'all'   || r.side === filterSide)
     );
   });
 
@@ -104,6 +106,11 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
           <option value="vegan">{t.mealVegan}</option>
           <option value="kosher">{t.mealKosher}</option>
         </select>
+        <select value={filterSide} onChange={reset(setFilterSide)} style={selStyle}>
+          <option value="all">{t.filterAllSides}</option>
+          <option value="groom">{t.sideGroom}</option>
+          <option value="bride">{t.sideBride}</option>
+        </select>
         {isPendingView && (
           <span style={{ fontSize: 11, fontWeight: 600, color: '#EA580C', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 6, padding: '0 8px', height: 36, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
             ⏳ {t.pendingOldest}
@@ -133,7 +140,7 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
                       />
                     </th>
                   )}
-                  {[t.colNum, t.colName, t.colPhone, t.colGuests, t.colMeal, t.colAttending, t.colStatus, t.colSubmitted].map(h => (
+                  {[t.colNum, t.colName, t.colPhone, t.colGuests, t.colMeal, t.colAttending, t.colStatus, t.colSide, t.colSubmitted].map(h => (
                     <th key={h} style={{
                       textAlign: 'start', fontSize: 11, fontWeight: 600,
                       color: 'var(--ink-soft)', textTransform: 'uppercase',
@@ -171,6 +178,15 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
                       {r.attending === 'yes' ? t.attendingYes : r.attending === 'no' ? t.attendingNo : '—'}
                     </td>
                     <td style={{ padding: '11px 14px' }}><StatusBadge status={r.status} attending={r.attending} /></td>
+                    <td style={{ padding: '11px 14px' }}>
+                      {r.side === 'groom' ? (
+                        <span style={{ padding: '2px 8px', background: '#DBEAFE', color: '#1D4ED8', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>{t.sideGroom}</span>
+                      ) : r.side === 'bride' ? (
+                        <span style={{ padding: '2px 8px', background: '#FCE7F3', color: '#BE185D', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>{t.sideBride}</span>
+                      ) : (
+                        <span style={{ color: 'var(--ink-muted)' }}>—</span>
+                      )}
+                    </td>
                     <td style={{ padding: '11px 14px', color: 'var(--ink-muted)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
                       {new Date(r.created_at).toLocaleDateString()}
                       {resolveStatus(r) === 'Pending' && (

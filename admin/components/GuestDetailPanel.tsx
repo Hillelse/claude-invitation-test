@@ -61,6 +61,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
       name: form.name, phone: form.phone, attending: form.attending,
       guests: Number(form.guests), pref: form.pref, notes: form.notes || null,
       status: form.status, internal_notes: form.internal_notes || null,
+      side: form.side,
     }).eq('id', guest.id);
     if (error) { setSaving(false); toast(error.message, 'error'); return; }
     const diff: string[] = [];
@@ -72,6 +73,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
     if (form.status !== guest.status)           diff.push(`סטטוס: ${guest.status}→${form.status}`);
     if (form.pref !== guest.pref)               diff.push(`תפריט: ${guest.pref}→${form.pref}`);
     if (form.phone !== guest.phone)             diff.push(`טלפון: ${ltr(guest.phone, form.phone)}`);
+    if (form.side !== guest.side)               diff.push(`צד: ${guest.side ?? '—'}→${form.side ?? '—'}`);
     if (diff.length > 0) {
       const entry = { rsvp_id: guest.id, changed_by: session?.user?.name ?? 'admin', summary: diff.join(' · ') };
       const { error: auditErr } = await supabase.from('rsvp_audit').insert(entry);
@@ -143,6 +145,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
                 <Field label={t.fieldGuests} val={String(guest.guests)} mono />
                 <Field label={t.fieldMeal} val={PREF_LABELS[guest.pref] ?? guest.pref} />
                 <Field label={t.fieldStatus} val={guest.status ?? '—'} />
+                <Field label={t.fieldSide} val={guest.side === 'groom' ? t.sideGroom : guest.side === 'bride' ? t.sideBride : '—'} />
                 <Field label={t.fieldSubmitted} val={new Date(guest.created_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })} mono />
               </div>
               {guest.notes && (
@@ -211,6 +214,24 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
                     <option value="vegan">{t.mealVegan}</option>
                     <option value="kosher">{t.mealKosher}</option>
                   </select>
+                </div>
+              </div>
+              <div>
+                <label style={lbl}>{t.fieldSide}</label>
+                <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                  {(['groom', null, 'bride'] as const).map(v => (
+                    <button key={String(v)} type="button"
+                      onClick={() => setForm(f => ({ ...f, side: v }))}
+                      style={{
+                        flex: 1, height: 36, border: 'none', fontSize: 13, cursor: 'pointer',
+                        background: form.side === v ? (v === 'groom' ? '#DBEAFE' : v === 'bride' ? '#FCE7F3' : 'var(--cream-deep)') : 'var(--surface)',
+                        color: form.side === v ? (v === 'groom' ? '#1D4ED8' : v === 'bride' ? '#BE185D' : 'var(--ink)') : 'var(--ink-soft)',
+                        fontWeight: form.side === v ? 600 : 400, fontFamily: 'var(--font-ui)',
+                        borderRight: v === null ? '1px solid var(--line)' : v === 'groom' ? '1px solid var(--line)' : 'none',
+                      }}>
+                      {v === 'groom' ? t.sideGroom : v === 'bride' ? t.sideBride : '—'}
+                    </button>
+                  ))}
                 </div>
               </div>
               <div><label style={lbl}>{t.fieldMessage}</label><textarea value={form.notes ?? ''} onChange={upd('notes')} rows={2} style={ta} /></div>

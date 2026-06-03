@@ -26,6 +26,10 @@ export default function SummaryBar({ data, activeStatus, onStatusClick }: Props)
   const vegan   = confirmedRows.filter(r => r.pref === 'vegan').reduce((s, r) => s + (r.guests || 1), 0);
   const kosher  = confirmedRows.filter(r => r.pref === 'kosher').reduce((s, r) => s + (r.guests || 1), 0);
 
+  const groomCount    = data.filter(r => r.side === 'groom').reduce((s, r) => s + (r.guests || 1), 0);
+  const brideCount    = data.filter(r => r.side === 'bride').reduce((s, r) => s + (r.guests || 1), 0);
+  const untaggedCount = data.filter(r => !r.side).reduce((s, r) => s + (r.guests || 1), 0);
+
   const cards = [
     { label: t.totalRsvps, value: data.reduce((s, r) => s + (r.guests || 1), 0), accent: 'var(--green)',     bg: 'rgba(79,107,82,0.08)', filter: null },
     { label: t.confirmed,  value: confirmed,   accent: '#16A34A',           bg: '#F0FDF4',              filter: 'Confirmed' },
@@ -66,7 +70,7 @@ export default function SummaryBar({ data, activeStatus, onStatusClick }: Props)
       </div>
 
       {/* Catering breakdown — confirmed guests only */}
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 16px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10 }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 16px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, marginBottom: 8 }}>
         <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginInlineEnd: 6, whiteSpace: 'nowrap' }}>
           🍽 {t.confirmed}
         </span>
@@ -76,6 +80,27 @@ export default function SummaryBar({ data, activeStatus, onStatusClick }: Props)
             <span style={{ fontSize: 15, fontWeight: 700, color: m.accent, fontVariantNumeric: 'tabular-nums' }}>{m.value}</span>
           </div>
         ))}
+      </div>
+
+      {/* Side breakdown */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 16px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10 }}>
+        <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginInlineEnd: 6, whiteSpace: 'nowrap' }}>
+          👥 {t.fieldSide}
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#DBEAFE', borderRadius: 6 }}>
+          <span style={{ fontSize: 11, color: '#1D4ED8' }}>{t.sideGroom}</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: '#1D4ED8', fontVariantNumeric: 'tabular-nums' }}>{groomCount}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#FCE7F3', borderRadius: 6 }}>
+          <span style={{ fontSize: 11, color: '#BE185D' }}>{t.sideBride}</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: '#BE185D', fontVariantNumeric: 'tabular-nums' }}>{brideCount}</span>
+        </div>
+        {untaggedCount > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'var(--cream-deep)', borderRadius: 6 }}>
+            <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{t.sideUntagged}</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-muted)', fontVariantNumeric: 'tabular-nums' }}>{untaggedCount}</span>
+          </div>
+        )}
       </div>
     </div>
   );

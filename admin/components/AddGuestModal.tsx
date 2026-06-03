@@ -17,6 +17,7 @@ export default function AddGuestModal({ onClose, onAdded, toast }: Props) {
   const { t } = useLang();
   const { data: session } = useSession();
   const [form, setForm] = useState(EMPTY);
+  const [side, setSide] = useState<'groom' | 'bride' | null>(null);
   const [saving, setSaving] = useState(false);
 
   const upd = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -37,6 +38,7 @@ export default function AddGuestModal({ onClose, onAdded, toast }: Props) {
       name: form.name, phone: form.phone, attending: form.attending,
       guests: Number(form.guests), pref: form.pref, status: form.status,
       notes: form.notes || null, internal_notes: form.internal_notes || null,
+      side: side,
     }]).select().single();
     setSaving(false);
     if (error) { toast(error.message, 'error'); return; }
@@ -100,6 +102,24 @@ export default function AddGuestModal({ onClose, onAdded, toast }: Props) {
                 <option value="Pending">{t.filterPending}</option>
                 <option value="Declined">{t.filterDeclined}</option>
               </select>
+            </div>
+          </div>
+          <div>
+            <label style={lbl}>{t.fieldSide}</label>
+            <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--line)' }}>
+              {(['groom', null, 'bride'] as const).map(v => (
+                <button key={String(v)} type="button"
+                  onClick={() => setSide(v)}
+                  style={{
+                    flex: 1, height: 36, border: 'none', fontSize: 13, cursor: 'pointer',
+                    background: side === v ? (v === 'groom' ? '#DBEAFE' : v === 'bride' ? '#FCE7F3' : 'var(--cream-deep)') : 'var(--surface)',
+                    color: side === v ? (v === 'groom' ? '#1D4ED8' : v === 'bride' ? '#BE185D' : 'var(--ink)') : 'var(--ink-soft)',
+                    fontWeight: side === v ? 600 : 400, fontFamily: 'var(--font-ui)',
+                    borderRight: v === null ? '1px solid var(--line)' : v === 'groom' ? '1px solid var(--line)' : 'none',
+                  }}>
+                  {v === 'groom' ? t.sideGroom : v === 'bride' ? t.sideBride : '—'}
+                </button>
+              ))}
             </div>
           </div>
           <div><label style={lbl}>{t.fieldMessage}</label><textarea value={form.notes} onChange={upd('notes')} rows={2} style={ta} /></div>
