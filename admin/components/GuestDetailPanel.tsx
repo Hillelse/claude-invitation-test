@@ -29,6 +29,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
     setForm({ ...guest });
     supabase.from('rsvp_audit').select('*').eq('rsvp_id', guest.id).order('changed_at', { ascending: false })
       .then(({ data }) => setHistory((data ?? []) as RsvpAudit[]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guest.id]);
 
   const PREF_LABELS: Record<string, string> = { regular: t.mealRegular, vegan: t.mealVegan, kosher: t.mealKosher };
