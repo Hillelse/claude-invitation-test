@@ -11,6 +11,8 @@ export type Rsvp = {
   status: string | null;
   internal_notes: string | null;
   side: 'groom' | 'bride' | null;
+  lang: 'he' | 'fr' | 'both' | null;
+  messaged_at: string | null;
   created_at: string;
 };
 

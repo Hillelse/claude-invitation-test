@@ -4,7 +4,8 @@ import { useSession } from 'next-auth/react';
 import { supabase, Rsvp, RsvpAudit } from '@/lib/supabase';
 import StatusBadge from './StatusBadge';
 import { useLang } from '@/app/providers';
-import { isValidPhone, normalizePhone } from '@/lib/validation';
+import { isValidPhone } from '@/lib/validation';
+import { guestWaLink, inferLang, DEFAULT_TEMPLATES } from '@/lib/whatsapp';
 import { translateSummary, splitSummaryParts } from '@/lib/translateSummary';
 
 type Props = {
@@ -34,21 +35,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
 
   const PREF_LABELS: Record<string, string> = { regular: t.mealRegular, vegan: t.mealVegan, kosher: t.mealKosher };
 
-  const waHref = (() => {
-    if (!guest.phone) return null;
-    const local = normalizePhone(guest.phone); // strips country prefix → local 0xxx format
-    const digits = local.replace(/\D/g, '');
-    let intl: string;
-    if (digits.startsWith('06') || digits.startsWith('07')) {
-      intl = '33' + digits.slice(1);        // French mobile
-    } else if (digits.startsWith('0')) {
-      intl = '972' + digits.slice(1);       // Israeli (05x, 02-09)
-    } else {
-      intl = digits;                        // already international (no leading 0)
-    }
-    const msg = encodeURIComponent(t.whatsAppMessage(guest.name));
-    return `https://wa.me/${intl}?text=${msg}`;
-  })();
+  const waHref = guestWaLink(guest, DEFAULT_TEMPLATES);
 
   const ts = (s: string) => translateSummary(s, t.dir);
 
@@ -62,7 +49,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
       name: form.name, phone: form.phone, attending: form.attending,
       guests: Number(form.guests), pref: form.pref, notes: form.notes || null,
       status: form.status, internal_notes: form.internal_notes || null,
-      side: form.side,
+      side: form.side, lang: form.lang,
     }).eq('id', guest.id);
     if (error) { setSaving(false); toast(error.message, 'error'); return; }
     const diff: string[] = [];
@@ -75,6 +62,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
     if (form.pref !== guest.pref)               diff.push(`תפריט: ${guest.pref}→${form.pref}`);
     if (form.phone !== guest.phone)             diff.push(`טלפון: ${ltr(guest.phone, form.phone)}`);
     if (form.side !== guest.side)               diff.push(`צד: ${guest.side ?? '—'}→${form.side ?? '—'}`);
+    if (form.lang !== guest.lang)               diff.push(`שפה: ${guest.lang ?? '—'}→${form.lang ?? '—'}`);
     if (diff.length > 0) {
       const entry = { rsvp_id: guest.id, changed_by: session?.user?.name ?? 'admin', summary: diff.join(' · ') };
       const { error: auditErr } = await supabase.from('rsvp_audit').insert(entry);
@@ -231,6 +219,26 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
                         borderRight: v === null ? '1px solid var(--line)' : v === 'groom' ? '1px solid var(--line)' : 'none',
                       }}>
                       {v === 'groom' ? t.sideGroom : v === 'bride' ? t.sideBride : '—'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={lbl}>{t.fieldLang}</label>
+                <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                  {([null, 'he', 'fr', 'both'] as const).map((v, i) => (
+                    <button key={String(v)} type="button"
+                      onClick={() => setForm(f => ({ ...f, lang: v }))}
+                      style={{
+                        flex: 1, height: 36, border: 'none', fontSize: 13, cursor: 'pointer',
+                        background: form.lang === v ? 'var(--green)' : 'var(--surface)',
+                        color: form.lang === v ? '#fff' : 'var(--ink-soft)',
+                        fontWeight: form.lang === v ? 600 : 400, fontFamily: 'var(--font-ui)',
+                        borderRight: i < 3 ? '1px solid var(--line)' : 'none',
+                      }}>
+                      {v === null
+                        ? t.langAuto(inferLang(form.phone) === 'he' ? t.langHe : inferLang(form.phone) === 'fr' ? t.langFr : t.langBoth)
+                        : v === 'he' ? t.langHe : v === 'fr' ? t.langFr : t.langBoth}
                     </button>
                   ))}
                 </div>

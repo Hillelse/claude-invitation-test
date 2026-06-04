@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Rsvp } from '@/lib/supabase';
 import StatusBadge from './StatusBadge';
 import { useLang } from '@/app/providers';
+import { inferLang } from '@/lib/whatsapp';
 
 type Props = {
   data: Rsvp[];
@@ -33,6 +34,7 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
   const [filterAtt, setFilterAtt]       = useState('all');
   const [filterPref, setFilterPref]     = useState('all');
   const [filterSide, setFilterSide]     = useState('all');
+  const [filterLang, setFilterLang]     = useState('all');
   const [page, setPage] = useState(0);
 
   useEffect(() => {
@@ -54,7 +56,8 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
       (filterStatus === 'all' || resolveStatus(r) === filterStatus) &&
       (filterAtt === 'all'    || r.attending === filterAtt) &&
       (filterPref === 'all'   || r.pref === filterPref) &&
-      (filterSide === 'all'   || r.side === filterSide)
+      (filterSide === 'all'   || r.side === filterSide) &&
+      (filterLang === 'all'   || (filterLang === 'untagged' ? !r.lang : r.lang === filterLang))
     );
   });
 
@@ -118,6 +121,12 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
           <option value="groom">{t.sideGroom}</option>
           <option value="bride">{t.sideBride}</option>
         </select>
+        <select value={filterLang} onChange={e => { setFilterLang(e.target.value); setPage(0); }} style={selStyle}>
+          <option value="all">{t.filterAllLangs}</option>
+          <option value="he">{t.langHe}</option>
+          <option value="fr">{t.langFr}</option>
+          <option value="both">{t.langBoth}</option>
+        </select>
         {isPendingView && (
           <span style={{ fontSize: 11, fontWeight: 600, color: '#EA580C', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 6, padding: '0 8px', height: 36, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
             ⏳ {t.pendingOldest}
@@ -147,7 +156,7 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
                       />
                     </th>
                   )}
-                  {[t.colNum, t.colName, t.colPhone, t.colGuests, t.colMeal, t.colAttending, t.colStatus, t.colSide, t.colSubmitted].map(h => (
+                  {[t.colNum, t.colName, t.colPhone, t.colGuests, t.colMeal, t.colAttending, t.colStatus, t.colSide, t.colLang, t.colSubmitted].map(h => (
                     <th key={h} style={{
                       textAlign: 'start', fontSize: 11, fontWeight: 600,
                       color: 'var(--ink-soft)', textTransform: 'uppercase',
@@ -195,6 +204,22 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
                       ) : (
                         <span style={{ color: 'var(--ink-muted)' }}>—</span>
                       )}
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      {(() => {
+                        const lv = r.lang ?? inferLang(r.phone);
+                        const label = lv === 'he' ? t.langHe : lv === 'fr' ? t.langFr : t.langBoth;
+                        const tagged = !!r.lang;
+                        return (
+                          <span onClick={e => { e.stopPropagation(); const next = filterLang === lv ? 'all' : lv; setFilterLang(next); setPage(0); }}
+                            title={tagged ? label : t.langAuto(label)}
+                            style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer',
+                              background: tagged ? 'rgba(79,107,82,0.12)' : 'transparent',
+                              color: tagged ? 'var(--green-deep)' : 'var(--ink-muted)',
+                              border: tagged ? 'none' : '1px dashed var(--line)' }}>{label}</span>
+                        );
+                      })()}
+                      {r.messaged_at && <span title={t.broadcastSent} style={{ marginInlineStart: 5, color: '#16A34A', fontSize: 12 }}>✓</span>}
                     </td>
                     <td style={{ padding: '11px 14px', color: 'var(--ink-muted)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
                       {new Date(r.created_at).toLocaleDateString()}

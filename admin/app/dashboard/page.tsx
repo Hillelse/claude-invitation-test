@@ -5,6 +5,7 @@ import SummaryBar from '@/components/SummaryBar';
 import GuestTable from '@/components/GuestTable';
 import GuestDetailPanel from '@/components/GuestDetailPanel';
 import AddGuestModal from '@/components/AddGuestModal';
+import BroadcastModal from '@/components/BroadcastModal';
 import ImportPreviewModal, { PreviewRow } from '@/components/ImportPreviewModal';
 import Toast, { ToastMsg } from '@/components/Toast';
 import { useLang } from '@/app/providers';
@@ -17,6 +18,7 @@ export default function DashboardPage() {
   const [loading, setLoading]       = useState(true);
   const [selected, setSelected]     = useState<Rsvp | null>(null);
   const [showAdd, setShowAdd]       = useState(false);
+  const [showBroadcast, setShowBroadcast] = useState(false);
   const [toasts, setToasts]         = useState<ToastMsg[]>([]);
   const [live, setLive]             = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -77,6 +79,7 @@ export default function DashboardPage() {
   const handleDelete   = (id: number) => setData(d => d.filter(r => r.id !== id));
   const handleAdded    = (r: Rsvp)   => setData(d => [r, ...d]);
   const handleFiltered = useCallback((rows: Rsvp[]) => { filteredRef.current = rows; }, []);
+  const handleMessaged = useCallback((id: number, ts: string) => setData(d => d.map(r => r.id === id ? { ...r, messaged_at: ts } : r)), []);
 
   const toggleBulkId  = useCallback((id: number) => setBulkIds(prev => { const n = new Set(prev); if (n.has(id)) { n.delete(id); } else { n.add(id); } return n; }), []);
   const toggleBulkAll = useCallback((ids: number[], selectAll: boolean) => setBulkIds(prev => { const n = new Set(prev); ids.forEach(id => { if (selectAll) { n.add(id); } else { n.delete(id); } }); return n; }), []);
@@ -98,6 +101,16 @@ export default function DashboardPage() {
     if (error) { toast(error.message, 'error'); setBulkSaving(false); return; }
     setData(d => d.map(r => bulkIds.has(r.id) ? { ...r, status: 'Declined' } : r));
     toast(t.bulkDeclined(ids.length));
+    setBulkIds(new Set()); setBulkSaving(false);
+  };
+
+  const handleBulkLang = async (lang: 'he' | 'fr' | 'both') => {
+    setBulkSaving(true);
+    const ids = Array.from(bulkIds);
+    const { error } = await supabase.from('rsvp').update({ lang }).in('id', ids);
+    if (error) { toast(error.message, 'error'); setBulkSaving(false); return; }
+    setData(d => d.map(r => bulkIds.has(r.id) ? { ...r, lang } : r));
+    toast(t.bulkLangSet(ids.length));
     setBulkIds(new Set()); setBulkSaving(false);
   };
 
@@ -211,6 +224,7 @@ export default function DashboardPage() {
           <input ref={importRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={importXlsx} />
           <button onClick={() => importRef.current?.click()} style={btn()}>{t.import}</button>
           <button onClick={exportXlsx} style={btn()}>{t.export}</button>
+          <button onClick={() => setShowBroadcast(true)} style={{ ...btn(), background: '#25D366', color: '#fff', border: 'none' }}>{t.broadcastBtn}</button>
           <button onClick={() => setShowAdd(true)} style={btn(true)}>{t.addGuest}</button>
         </div>
       </div>
@@ -227,6 +241,12 @@ export default function DashboardPage() {
               <button onClick={handleBulkConfirm} disabled={bulkSaving} style={{ height: 30, padding: '0 12px', background: '#F0FDF4', color: '#16A34A', border: '1px solid #86EFAC', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: bulkSaving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-ui)' }}>{t.bulkConfirm}</button>
               <button onClick={handleBulkDecline} disabled={bulkSaving} style={{ height: 30, padding: '0 12px', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: bulkSaving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-ui)' }}>{t.bulkDecline}</button>
               <button onClick={() => setConfirmBulkDel(true)} disabled={bulkSaving} style={{ height: 30, padding: '0 12px', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: bulkSaving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-ui)' }}>{t.bulkDelete}</button>
+              <select disabled={bulkSaving} defaultValue="" onChange={e => { if (e.target.value) { handleBulkLang(e.target.value as 'he' | 'fr' | 'both'); e.target.value = ''; } }} style={{ height: 30, padding: '0 8px', background: 'var(--surface)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 6, fontSize: 12, cursor: bulkSaving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-ui)' }}>
+                <option value="">{t.bulkSetLangPlaceholder}</option>
+                <option value="he">{t.langHe}</option>
+                <option value="fr">{t.langFr}</option>
+                <option value="both">{t.langBoth}</option>
+              </select>
               <div style={{ flex: 1 }} />
               <button onClick={() => setBulkIds(new Set())} style={{ height: 28, width: 28, background: 'none', border: 'none', color: 'var(--ink-soft)', cursor: 'pointer', fontSize: 16, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             </div>
@@ -248,6 +268,15 @@ export default function DashboardPage() {
 
       {selected && <GuestDetailPanel guest={selected} onClose={() => setSelected(null)} onUpdate={handleUpdate} onDelete={handleDelete} toast={toast} isDuplicate={duplicateIds.has(selected.id)} />}
       {showAdd && <AddGuestModal onClose={() => setShowAdd(false)} onAdded={handleAdded} toast={toast} />}
+      {showBroadcast && (
+        <BroadcastModal
+          recipients={bulkIds.size > 0 ? data.filter(r => bulkIds.has(r.id)) : (filteredRef.current.length > 0 ? filteredRef.current : data)}
+          onClose={() => setShowBroadcast(false)}
+          onMessaged={handleMessaged}
+          onLangChange={(id, lang) => setData(d => d.map(r => r.id === id ? { ...r, lang } : r))}
+          toast={toast}
+        />
+      )}
       {importPreview && <ImportPreviewModal rows={importPreview} onConfirm={doImport} onClose={() => setImportPreview(null)} />}
       <Toast toasts={toasts} remove={removeToast} />
     </>
