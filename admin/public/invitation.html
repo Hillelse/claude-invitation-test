@@ -74,6 +74,12 @@ html,body{font-family:var(--font-body);color:var(--ink);background:var(--cream);
 .lang-btn.active{background:var(--copper);color:var(--cream);}
 .lang-btn:not(.active){background:transparent;color:var(--ink);}
 
+/* ── Music toggle ── */
+#music-btn{position:fixed;bottom:20px;right:20px;z-index:100;display:inline-flex;align-items:center;justify-content:center;width:clamp(44px,11vw,52px);height:clamp(44px,11vw,52px);padding:0;border-radius:999px;cursor:pointer;background:rgba(252,250,246,0.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(79,107,82,0.28);box-shadow:0 4px 20px rgba(46,70,50,0.12);transition:transform 0.3s var(--ease-luxury),box-shadow 0.3s ease,opacity 0.3s ease;pointer-events:auto;}
+#music-btn:hover{transform:scale(1.07);box-shadow:0 6px 26px rgba(46,70,50,0.18);}
+#music-btn.muted{opacity:0.62;}
+#music-btn svg{display:block;}
+
 /* ── Ornament ── */
 .ornament-divider{display:flex;align-items:center;justify-content:center;gap:16px;width:100%;max-width:420px;margin:0 auto;color:var(--copper);}
 .ornament-divider .line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--copper),transparent);}
@@ -575,6 +581,52 @@ function LangSwitcher({ lang, setLang }) {
   );
 }
 
+function MusicToggle({ lang }) {
+  const audioRef = React.useRef(null);
+  const [muted, setMuted] = React.useState(false);
+
+  React.useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    let cleaned = false;
+    const events = ['pointerdown','keydown','scroll','touchstart'];
+    const kick = () => { if (!cleaned) audio.play().catch(() => {}); };
+    const remove = () => { events.forEach(e => window.removeEventListener(e, onFirst)); cleaned = true; };
+    const onFirst = () => { kick(); remove(); };
+    audio.play().catch(() => { events.forEach(e => window.addEventListener(e, onFirst, { once:true, passive:true })); });
+    return () => events.forEach(e => window.removeEventListener(e, onFirst));
+  }, []);
+
+  const toggle = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (muted) { audio.play().catch(() => {}); setMuted(false); }
+    else { audio.pause(); setMuted(true); }
+  };
+
+  const label = lang === 'he'
+    ? (muted ? 'הפעל מוזיקה' : 'השתק מוזיקה')
+    : (muted ? 'Activer la musique' : 'Couper la musique');
+
+  return (
+    <button id="music-btn" className={muted ? 'muted' : ''} onClick={toggle} aria-label={label} title={label}>
+      <audio ref={audioRef} src="./uploads/invitation-song.mp3" loop preload="auto"/>
+      {muted ? (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--copper)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 9 L8 9 L13 5 L13 19 L8 15 L4 15 Z"/>
+          <line x1="17" y1="9" x2="22" y2="14"/><line x1="22" y1="9" x2="17" y2="14"/>
+        </svg>
+      ) : (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--copper)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 9 L8 9 L13 5 L13 19 L8 15 L4 15 Z"/>
+          <path d="M17 8.5 C 18.6 10.5, 18.6 13.5, 17 15.5"/>
+          <path d="M19.5 6.5 C 22.2 9.6, 22.2 14.4, 19.5 17.5"/>
+        </svg>
+      )}
+    </button>
+  );
+}
+
 function NavButtons({ t }) {
   return (
     <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap',marginTop:24}}>
@@ -776,6 +828,7 @@ function App() {
   return (
     <div dir={dir} style={{background:'var(--cream)',minHeight:'100%',position:'relative'}}>
       <LangSwitcher lang={lang} setLang={setLang}/>
+      <MusicToggle lang={lang}/>
 
       {/* ── HERO ── */}
       <Hero t={t} lang={lang}/>
