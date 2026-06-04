@@ -47,7 +47,7 @@ export const TEXT = {
     fieldSide: 'צד',
     mealRegular: 'רגיל',
     mealVegan: 'טבעוני',
-    mealKosher: 'כשר',
+    mealKosher: 'חלק',
 
     results: 'תוצאות',
     prev: '← הקודם',
