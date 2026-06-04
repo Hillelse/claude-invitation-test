@@ -165,7 +165,7 @@ html,body{font-family:var(--font-body);color:var(--ink);background:var(--cream);
 #splash.hiding{opacity:0;pointer-events:none;}
 #root{opacity:0;transition:opacity 0.4s ease;}
 .splash-inner{display:flex;flex-direction:column;align-items:center;gap:28px;}
-.splash-logo{height:340px;width:auto;animation:splashIn 1s cubic-bezier(0.16,1,0.3,1) both;}
+.splash-logo{height:min(340px,46vh);max-width:78vw;width:auto;animation:splashIn 1s cubic-bezier(0.16,1,0.3,1) both;}
 .splash-dots{display:flex;gap:10px;align-items:center;}
 .splash-dots span{width:6px;height:6px;border-radius:50%;background:var(--copper);opacity:0.2;animation:dotPulse 1.2s ease-in-out infinite;}
 .splash-dots span:nth-child(1){animation-delay:0s;}
@@ -182,7 +182,7 @@ html,body{font-family:var(--font-body);color:var(--ink);background:var(--cream);
 <div id="scroll-prog"></div>
 <div id="splash">
   <div class="splash-inner">
-    <img src="./logo-site.svg" alt="S&H" class="splash-logo"/>
+    <img src="./Shirel_Hillel_logo_invitation.svg" alt="S&H" class="splash-logo"/>
     <div class="splash-dots"><span></span><span></span><span></span></div>
   </div>
 </div>
@@ -583,25 +583,30 @@ function LangSwitcher({ lang, setLang }) {
 
 function MusicToggle({ lang }) {
   const audioRef = React.useRef(null);
+  const mutedRef = React.useRef(false);
   const [muted, setMuted] = React.useState(false);
 
   React.useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    let cleaned = false;
-    const events = ['pointerdown','keydown','scroll','touchstart'];
-    const kick = () => { if (!cleaned) audio.play().catch(() => {}); };
-    const remove = () => { events.forEach(e => window.removeEventListener(e, onFirst)); cleaned = true; };
-    const onFirst = () => { kick(); remove(); };
-    audio.play().catch(() => { events.forEach(e => window.addEventListener(e, onFirst, { once:true, passive:true })); });
-    return () => events.forEach(e => window.removeEventListener(e, onFirst));
+    // Desktop browsers may resolve play() yet keep audio paused (no reject),
+    // so always arm gesture listeners; remove them only once playback is live.
+    const events = ['pointerdown','keydown','scroll','touchstart','click'];
+    const remove = () => events.forEach(e => window.removeEventListener(e, start));
+    const start = () => {
+      if (mutedRef.current) return;
+      audio.play().then(() => { if (!audio.paused) remove(); }).catch(() => {});
+    };
+    audio.play().then(() => { if (!audio.paused) remove(); }).catch(() => {});
+    events.forEach(e => window.addEventListener(e, start, { passive:true }));
+    return remove;
   }, []);
 
   const toggle = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (muted) { audio.play().catch(() => {}); setMuted(false); }
-    else { audio.pause(); setMuted(true); }
+    if (muted) { mutedRef.current = false; audio.play().catch(() => {}); setMuted(false); }
+    else { mutedRef.current = true; audio.pause(); setMuted(true); }
   };
 
   const label = lang === 'he'
@@ -919,7 +924,7 @@ function App() {
             {row:'span 2',src:'./photos/site-1.jpg',ratio:'3/4'},
             {src:'./photos/site-2.jpg',ratio:'4/3'},
             {src:'./photos/site-3.jpg',ratio:'4/3',pos:'center 15%'},
-            {src:'./photos/site-4.jpg',ratio:'4/3'},
+            {src:'./photos/site-6.jpg',ratio:'4/3',pos:'center top'},
             {src:'./photos/site-5.PNG',ratio:'4/3'},
           ].map((p,i) => {
             const ref = React.useRef(null);
