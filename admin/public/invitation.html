@@ -250,7 +250,7 @@ const TEXT = {
     days:'Jours', hours:'Heures', mins:'Minutes', secs:'Secondes',
     scheduleKicker:'Le programme',
     sched:[
-      ['18:30','Cocktail','Buffet, vin et musique douce dans le jardin'],
+      ['18:30','Cocktail','Buffet, vin et musique douce en extérieur'],
       ['19:30','Cérémonie','La houppa aura lieu dans le jardin'],
       ['20:30','Dîner','Dîner festif avec menu signé par le chef'],
       ["22:00","Soirée dansante","DJ Sarko jusqu'au bout de la nuit"],
@@ -261,7 +261,7 @@ const TEXT = {
     galleryKicker:'Souvenirs',
     rsvpKicker:'RSVP', rsvpDeadline:'Merci de confirmer avant le 01.07.2026',
     fName:'Nom complet', fPhone:'Téléphone', fAttend:'Présence',
-    fYes:'Oui,\nassisterons', fNo:"Nan,\nn'assisterons pas",
+    fYes:'Oui,\nassisterons', fNo:"Non,\nn'assisterons pas",
     fGuests:"Nombre d'invités", fPref:'Préférence',
     prefRegular:'Standard (Halak)', prefVegan:'Végan', prefKosher:'Halak Mahfoud',
     fNotes:'Un petit mot pour les mariés', fNotesPh:'Un vœu, un souvenir, ou juste un mot...',
@@ -583,40 +583,54 @@ function LangSwitcher({ lang, setLang }) {
 
 function MusicToggle({ lang }) {
   const audioRef = React.useRef(null);
-  const mutedRef = React.useRef(false);
-  const [muted, setMuted] = React.useState(false);
+  const userPausedRef = React.useRef(false); // true only after user explicitly mutes
+  const [playing, setPlaying] = React.useState(false);
 
   React.useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    // Desktop browsers may resolve play() yet keep audio paused (no reject),
-    // so always arm gesture listeners; remove them only once playback is live.
-    const events = ['pointerdown','keydown','scroll','touchstart','click'];
-    const remove = () => events.forEach(e => window.removeEventListener(e, start));
-    const start = () => {
-      if (mutedRef.current) return;
-      audio.play().then(() => { if (!audio.paused) remove(); }).catch(() => {});
+    // Autoplay with sound is blocked until a user gesture (tap/scroll/key).
+    // Start on the first gesture anywhere — except on the music button itself,
+    // which owns its own taps via onClick (avoids a play/pause race).
+    const events = ['pointerdown','touchstart','touchend','scroll','keydown','click'];
+    const onGesture = (e) => {
+      if (userPausedRef.current) return;
+      const tgt = e && e.target;
+      if (tgt && tgt.closest && tgt.closest('#music-btn')) return;
+      audio.play().catch(() => {});
     };
-    audio.play().then(() => { if (!audio.paused) remove(); }).catch(() => {});
-    events.forEach(e => window.addEventListener(e, start, { passive:true }));
-    return remove;
+    const detach = () => events.forEach(e => window.removeEventListener(e, onGesture));
+    // Keep the icon in sync with reality; drop gesture listeners once playing.
+    const onPlay  = () => { setPlaying(true); detach(); };
+    const onPause = () => setPlaying(false);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+
+    audio.play().catch(() => {}); // try immediate autoplay (works if already engaged)
+    events.forEach(e => window.addEventListener(e, onGesture, { passive:true }));
+
+    return () => {
+      detach();
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+    };
   }, []);
 
   const toggle = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (muted) { mutedRef.current = false; audio.play().catch(() => {}); setMuted(false); }
-    else { mutedRef.current = true; audio.pause(); setMuted(true); }
+    if (audio.paused) { userPausedRef.current = false; audio.play().catch(() => {}); }
+    else { userPausedRef.current = true; audio.pause(); }
   };
 
   const label = lang === 'he'
-    ? (muted ? 'הפעל מוזיקה' : 'השתק מוזיקה')
-    : (muted ? 'Activer la musique' : 'Couper la musique');
+    ? (playing ? 'השתק מוזיקה' : 'הפעל מוזיקה')
+    : (playing ? 'Couper la musique' : 'Activer la musique');
 
   return (
-    <button id="music-btn" className={muted ? 'muted' : ''} onClick={toggle} aria-label={label} title={label}>
+    <button id="music-btn" className={playing ? '' : 'muted'} onClick={toggle} aria-label={label} title={label}>
       <audio ref={audioRef} src="./uploads/invitation-song.mp3" loop preload="auto"/>
-      {muted ? (
+      {!playing ? (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--copper)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 9 L8 9 L13 5 L13 19 L8 15 L4 15 Z"/>
           <line x1="17" y1="9" x2="22" y2="14"/><line x1="22" y1="9" x2="17" y2="14"/>
