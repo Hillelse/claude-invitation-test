@@ -260,8 +260,8 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <GuestTable data={data} onSelect={setSelected} onFilteredChange={handleFiltered} statusFilter={statusFilter}
-            sideFilter={sideFilter} onFilterSideChange={s => setSideFilter(s === 'all' ? null : s)}
+          <GuestTable data={data} onSelect={setSelected} onFilteredChange={handleFiltered} onQuickUpdate={handleUpdate}
+            statusFilter={statusFilter} sideFilter={sideFilter} onFilterSideChange={s => setSideFilter(s === 'all' ? null : s)}
             selectedIds={bulkIds} onToggleId={toggleBulkId} onToggleAll={toggleBulkAll} duplicateIds={duplicateIds} />
         </>
       )}

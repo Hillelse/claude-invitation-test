@@ -23,6 +23,9 @@ export function translateSummary(s: string, dir: 'ltr' | 'rtl'): string {
     .replace('סטטוס:', 'Statut:')
     .replace('שם:', 'Nom:')
     .replace('טלפון:', 'Tél:')
+    .replace('הזמנה: לא→כן', 'Invitation: envoyée')
+    .replace('הזמנה: כן→לא', 'Invitation: annulée')
+    .replace('נשלחה הזמנה', 'Invitation envoyée')
     .replace('נוסף ידנית', 'Ajouté manuellement')
     .replace('יובא מקובץ', 'Importé depuis fichier')
     .replace('רשומה נוצרה', 'Entrée créée');

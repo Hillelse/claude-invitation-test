@@ -49,7 +49,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
       name: form.name, phone: form.phone, attending: form.attending,
       guests: Number(form.guests), pref: form.pref, notes: form.notes || null,
       status: form.status, internal_notes: form.internal_notes || null,
-      side: form.side, lang: form.lang,
+      side: form.side, lang: form.lang, messaged_at: form.messaged_at,
     }).eq('id', guest.id);
     if (error) { setSaving(false); toast(error.message, 'error'); return; }
     const diff: string[] = [];
@@ -63,12 +63,12 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
     if (form.phone !== guest.phone)             diff.push(`טלפון: ${ltr(guest.phone, form.phone)}`);
     if (form.side !== guest.side)               diff.push(`צד: ${guest.side ?? '—'}→${form.side ?? '—'}`);
     if (form.lang !== guest.lang)               diff.push(`שפה: ${guest.lang ?? '—'}→${form.lang ?? '—'}`);
+    if (!!form.messaged_at !== !!guest.messaged_at) diff.push(`הזמנה: ${guest.messaged_at ? 'כן' : 'לא'}→${form.messaged_at ? 'כן' : 'לא'}`);
     if (diff.length > 0) {
       const entry = { rsvp_id: guest.id, changed_by: session?.user?.name ?? 'admin', summary: diff.join(' · ') };
       const { error: auditErr } = await supabase.from('rsvp_audit').insert(entry);
       if (auditErr) { toast(`Audit: ${auditErr.message}`, 'error'); }
     }
-    // Re-fetch history to show latest
     const { data: freshHistory } = await supabase.from('rsvp_audit').select('*').eq('rsvp_id', guest.id).order('changed_at', { ascending: false });
     if (freshHistory) setHistory(freshHistory as RsvpAudit[]);
     setSaving(false);
@@ -136,6 +136,7 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
                 <Field label={t.fieldStatus} val={guest.status ?? '—'} />
                 <Field label={t.fieldSide} val={guest.side === 'groom' ? t.sideGroom : guest.side === 'bride' ? t.sideBride : '—'} />
                 <Field label={t.fieldSubmitted} val={new Date(guest.created_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })} mono />
+                <Field label={t.fieldSent} val={guest.messaged_at ? t.filterYes : t.filterNo} />
               </div>
               {guest.notes && (
                 <div style={{ marginTop: 4, marginBottom: 16, padding: '12px', background: 'var(--cream-deep)', borderRadius: 8, fontSize: 13, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
@@ -149,7 +150,6 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
                   {guest.internal_notes || t.none}
                 </div>
               </div>
-
               {waHref && (
                 <a href={waHref} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 36, marginTop: 8, background: '#25D366', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>
                   {t.whatsAppBtn}
@@ -159,7 +159,6 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
                 <button onClick={() => setEditing(true)} style={{ flex: 1, height: 36, background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-ui)' }}>{t.edit}</button>
                 <button onClick={() => setConfirm(true)} style={{ flex: 1, height: 36, background: 'transparent', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-ui)' }}>{t.delete}</button>
               </div>
-
               {confirmDelete && (
                 <div style={{ marginTop: 16, padding: '14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10 }}>
                   <p style={{ fontSize: 13, color: '#991B1B', marginBottom: 12, fontWeight: 500 }}>{t.confirmDelete(guest.name)}</p>
@@ -245,6 +244,11 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
               </div>
               <div><label style={lbl}>{t.fieldMessage}</label><textarea value={form.notes ?? ''} onChange={upd('notes')} rows={2} style={ta} /></div>
               <div><label style={lbl}>{t.fieldInternalNotes}</label><textarea value={form.internal_notes ?? ''} onChange={upd('internal_notes')} rows={3} style={ta} /></div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={!!form.messaged_at}
+                  onChange={e => setForm(f => ({ ...f, messaged_at: e.target.checked ? (f.messaged_at ?? new Date().toISOString()) : null }))} />
+                {t.fieldSent}
+              </label>
               <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
                 <button onClick={save} disabled={saving} style={{ flex: 1, height: 36, background: saving ? 'var(--green-light)' : 'var(--green)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-ui)' }}>
                   {saving ? t.saving : t.save}

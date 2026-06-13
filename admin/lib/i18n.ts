@@ -95,6 +95,7 @@ export const TEXT = {
     exported: (n: number) => `יוצאו ${n} שורות`,
     importDone: (n: number, skipped: number) => `יובאו ${n} אורחים${skipped > 0 ? `, דולגו ${skipped} כפולים` : ''}`,
     importAllExist: (n: number) => `כל ${n} הרשומות כבר קיימות`,
+    quickActions: 'פעולות מהירות',
     historyLabel: 'היסטוריית שינויים',
     auditAdded: 'נוסף ידנית',
     auditImported: 'יובא מקובץ',
@@ -127,6 +128,7 @@ export const TEXT = {
     bulkDeleted: (n: number) => `${n} אורחים נמחקו`,
 
     fieldLang: 'שפת הודעה',
+    fieldSent: 'הזמנה נשלחה',
     colLang: 'שפה',
     langHe: 'עברית',
     langFr: 'צרפתית',
@@ -252,6 +254,7 @@ export const TEXT = {
     exported: (n: number) => `${n} lignes exportées`,
     importDone: (n: number, skipped: number) => `${n} invités importés${skipped > 0 ? `, ${skipped} doublons ignorés` : ''}`,
     importAllExist: (n: number) => `Les ${n} entrées existent déjà`,
+    quickActions: 'Actions rapides',
     historyLabel: 'Historique des modifications',
     auditAdded: 'Ajouté manuellement',
     auditImported: 'Importé depuis fichier',
@@ -284,6 +287,7 @@ export const TEXT = {
     bulkDeleted: (n: number) => `${n} invité${n > 1 ? 's' : ''} supprimé${n > 1 ? 's' : ''}`,
 
     fieldLang: 'Langue du message',
+    fieldSent: 'Invitation envoyée',
     colLang: 'Langue',
     langHe: 'Hébreu',
     langFr: 'Français',

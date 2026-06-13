@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Rsvp } from '@/lib/supabase';
+import { useSession } from 'next-auth/react';
+import { supabase, Rsvp } from '@/lib/supabase';
 import StatusBadge from './StatusBadge';
 import { useLang } from '@/app/providers';
 import { inferLang } from '@/lib/whatsapp';
@@ -9,6 +10,7 @@ type Props = {
   data: Rsvp[];
   onSelect: (r: Rsvp) => void;
   onFilteredChange: (rows: Rsvp[]) => void;
+  onQuickUpdate?: (updated: Rsvp) => void;
   statusFilter?: string | null;
   sideFilter?: string | null;
   onFilterSideChange?: (side: string) => void;
@@ -27,15 +29,17 @@ function resolveStatus(r: Rsvp) {
   return 'Pending';
 }
 
-export default function GuestTable({ data, onSelect, onFilteredChange, statusFilter, sideFilter, onFilterSideChange, selectedIds, onToggleId, onToggleAll, duplicateIds }: Props) {
+export default function GuestTable({ data, onSelect, onFilteredChange, onQuickUpdate, statusFilter, sideFilter, onFilterSideChange, selectedIds, onToggleId, onToggleAll, duplicateIds }: Props) {
   const { t } = useLang();
+  const { data: session } = useSession();
   const [search, setSearch]             = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterAtt, setFilterAtt]       = useState('all');
   const [filterPref, setFilterPref]     = useState('all');
   const [filterSide, setFilterSide]     = useState('all');
   const [filterLang, setFilterLang]     = useState('all');
-  const [page, setPage] = useState(0);
+  const [page, setPage]                 = useState(0);
+  const [expandedId, setExpandedId]     = useState<number | null>(null);
 
   useEffect(() => {
     setFilterStatus(statusFilter ?? 'all');
@@ -79,11 +83,27 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
   const allOnPageSelected = onToggleId !== undefined && rows.length > 0 && rows.every(r => selectedIds?.has(r.id));
   const someOnPageSelected = onToggleId !== undefined && rows.some(r => selectedIds?.has(r.id));
 
+  const quickSet = async (guest: Rsvp, field: keyof Rsvp, value: Rsvp[keyof Rsvp], summary: string) => {
+    const { error } = await supabase.from('rsvp').update({ [field]: value } as Partial<Rsvp>).eq('id', guest.id);
+    if (error) return;
+    await supabase.from('rsvp_audit').insert({
+      rsvp_id: guest.id, changed_by: session?.user?.name ?? 'admin', summary,
+    });
+    onQuickUpdate?.({ ...guest, [field]: value } as Rsvp);
+  };
+
+  const colCount = (onToggleId ? 1 : 0) + 11; // 10 data cols + 1 expand col
+
   const selStyle: React.CSSProperties = {
     height: 36, padding: '0 12px', background: 'var(--surface)',
     border: '1px solid var(--line)', borderRadius: 8,
     fontSize: 13, color: 'var(--ink)', outline: 'none', cursor: 'pointer',
     fontFamily: 'var(--font-ui)',
+  };
+
+  const qaLbl: React.CSSProperties = {
+    fontSize: 10, fontWeight: 600, color: 'var(--ink-muted)',
+    textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
   };
 
   return (
@@ -165,16 +185,19 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
                       fontFamily: 'var(--font-ui)',
                     }}>{h}</th>
                   ))}
+                  <th style={{ width: 36, borderBottom: '1px solid var(--line)' }} />
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => {
                   const isChecked = selectedIds?.has(r.id) ?? false;
+                  const isExpanded = expandedId === r.id;
                   return (
+                  <>
                   <tr key={r.id} onClick={() => onSelect(r)}
-                    style={{ cursor: 'pointer', transition: 'background 0.1s', borderBottom: '1px solid var(--line)', background: isChecked ? 'rgba(79,107,82,0.07)' : 'transparent' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = isChecked ? 'rgba(79,107,82,0.12)' : 'var(--surface-hover)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = isChecked ? 'rgba(79,107,82,0.07)' : 'transparent')}>
+                    style={{ cursor: 'pointer', transition: 'background 0.1s', borderBottom: isExpanded ? 'none' : '1px solid var(--line)', background: isExpanded ? 'rgba(79,107,82,0.06)' : isChecked ? 'rgba(79,107,82,0.07)' : 'transparent' }}
+                    onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.background = isChecked ? 'rgba(79,107,82,0.12)' : 'var(--surface-hover)'; }}
+                    onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.background = isChecked ? 'rgba(79,107,82,0.07)' : 'transparent'; }}>
                     {onToggleId && (
                       <td style={{ padding: '11px 6px 11px 14px', width: 36 }}
                         onClick={e => { e.stopPropagation(); onToggleId(r.id); }}>
@@ -229,7 +252,107 @@ export default function GuestTable({ data, onSelect, onFilteredChange, statusFil
                         </span>
                       )}
                     </td>
+                    {/* Expand quick-actions toggle */}
+                    <td style={{ padding: '6px 10px 6px 4px', width: 32, textAlign: 'center' }}
+                      onClick={e => { e.stopPropagation(); setExpandedId(isExpanded ? null : r.id); }}>
+                      <button title={t.quickActions}
+                        style={{ width: 26, height: 26, border: '1px solid var(--line)', borderRadius: 6, background: isExpanded ? 'var(--green)' : 'var(--surface)', cursor: 'pointer', fontSize: 13, color: isExpanded ? '#fff' : 'var(--ink-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)' }}>
+                        ⚡
+                      </button>
+                    </td>
                   </tr>
+
+                  {/* Expanded quick-actions sub-row */}
+                  {isExpanded && (
+                    <tr key={`qa-${r.id}`} style={{ borderBottom: '1px solid var(--line)', background: 'rgba(79,107,82,0.04)' }}>
+                      <td colSpan={colCount} style={{ padding: '12px 16px' }}
+                        onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+
+                          {/* Attending */}
+                          <div>
+                            <div style={qaLbl}>{t.fieldAttending}</div>
+                            <div style={{ display: 'flex', borderRadius: 6, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                              {(['yes', 'no'] as const).map((v, idx) => (
+                                <button key={v} onClick={() => quickSet(r, 'attending', v, `הגעה: ${r.attending}→${v}`)}
+                                  style={{ height: 28, padding: '0 12px', border: 'none', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+                                    background: r.attending === v ? 'var(--green)' : 'var(--surface)',
+                                    color: r.attending === v ? '#fff' : 'var(--ink-soft)',
+                                    fontWeight: r.attending === v ? 600 : 400,
+                                    borderRight: idx === 0 ? '1px solid var(--line)' : 'none' }}>
+                                  {v === 'yes' ? t.filterYes : t.filterNo}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Status */}
+                          <div>
+                            <div style={qaLbl}>{t.fieldStatus}</div>
+                            <div style={{ display: 'flex', borderRadius: 6, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                              {(['Pending', 'Confirmed', 'Declined'] as const).map((v, idx) => (
+                                <button key={v} onClick={() => quickSet(r, 'status', v, `סטטוס: ${r.status ?? '—'}→${v}`)}
+                                  style={{ height: 28, padding: '0 10px', border: 'none', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+                                    background: r.status === v ? 'var(--green)' : 'var(--surface)',
+                                    color: r.status === v ? '#fff' : 'var(--ink-soft)',
+                                    fontWeight: r.status === v ? 600 : 400,
+                                    borderRight: idx < 2 ? '1px solid var(--line)' : 'none' }}>
+                                  {v === 'Pending' ? t.filterPending : v === 'Confirmed' ? t.filterConfirmed : t.filterDeclined}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Side */}
+                          <div>
+                            <div style={qaLbl}>{t.fieldSide}</div>
+                            <div style={{ display: 'flex', borderRadius: 6, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                              {(['groom', null, 'bride'] as const).map((v, idx) => (
+                                <button key={String(v)} onClick={() => quickSet(r, 'side', v, `צד: ${r.side ?? '—'}→${v ?? '—'}`)}
+                                  style={{ height: 28, padding: '0 10px', border: 'none', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+                                    background: r.side === v ? (v === 'groom' ? '#DBEAFE' : v === 'bride' ? '#FCE7F3' : 'var(--cream-deep)') : 'var(--surface)',
+                                    color: r.side === v ? (v === 'groom' ? '#1D4ED8' : v === 'bride' ? '#BE185D' : 'var(--ink)') : 'var(--ink-soft)',
+                                    fontWeight: r.side === v ? 600 : 400,
+                                    borderRight: idx < 2 ? '1px solid var(--line)' : 'none' }}>
+                                  {v === 'groom' ? t.sideGroom : v === 'bride' ? t.sideBride : '—'}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Language */}
+                          <div>
+                            <div style={qaLbl}>{t.fieldLang}</div>
+                            <div style={{ display: 'flex', borderRadius: 6, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                              {([null, 'he', 'fr', 'both'] as const).map((v, idx) => (
+                                <button key={String(v)} onClick={() => quickSet(r, 'lang', v, `שפה: ${r.lang ?? '—'}→${v ?? '—'}`)}
+                                  style={{ height: 28, padding: '0 10px', border: 'none', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+                                    background: r.lang === v ? 'var(--green)' : 'var(--surface)',
+                                    color: r.lang === v ? '#fff' : 'var(--ink-soft)',
+                                    fontWeight: r.lang === v ? 600 : 400,
+                                    borderRight: idx < 3 ? '1px solid var(--line)' : 'none' }}>
+                                  {v === null ? 'אוטו' : v === 'he' ? t.langHe : v === 'fr' ? t.langFr : t.langBoth}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Sent */}
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink)', cursor: 'pointer', userSelect: 'none', paddingBottom: 4 }}>
+                            <input type="checkbox" checked={!!r.messaged_at}
+                              style={{ cursor: 'pointer', width: 14, height: 14, accentColor: 'var(--green)' }}
+                              onChange={() => {
+                                const newTs = r.messaged_at ? null : new Date().toISOString();
+                                quickSet(r, 'messaged_at', newTs, newTs ? 'הזמנה: לא→כן' : 'הזמנה: כן→לא');
+                              }} />
+                            {t.fieldSent}
+                          </label>
+
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </>
                   );
                 })}
               </tbody>

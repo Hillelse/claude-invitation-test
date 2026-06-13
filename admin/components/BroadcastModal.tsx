@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 import { supabase, Rsvp } from '@/lib/supabase';
 import { useLang } from '@/app/providers';
 import { DEFAULT_TEMPLATES, buildMessage, resolveLang, guestWaLink, type Templates } from '@/lib/whatsapp';
@@ -25,6 +26,7 @@ const loadTpl = (): Templates => {
 
 export default function BroadcastModal({ recipients, onClose, onMessaged, onLangChange, toast }: Props) {
   const { t } = useLang();
+  const { data: session } = useSession();
   const [templates, setTemplates] = useState<Templates>(loadTpl);
   const [skipMessaged, setSkipMessaged] = useState(true);
   const [idx, setIdx] = useState(0);
@@ -74,6 +76,9 @@ export default function BroadcastModal({ recipients, onClose, onMessaged, onLang
     const ts = new Date().toISOString();
     const { error } = await supabase.from('rsvp').update({ messaged_at: ts }).eq('id', current.id);
     if (error) { toast(error.message, 'error'); return; }
+    await supabase.from('rsvp_audit').insert({
+      rsvp_id: current.id, changed_by: session?.user?.name ?? 'admin', summary: 'נשלחה הזמנה',
+    });
     setSent(s => new Set(s).add(current.id));
     onMessaged(current.id, ts);
     setIdx(i => i + 1);
