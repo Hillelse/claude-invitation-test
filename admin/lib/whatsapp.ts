@@ -17,9 +17,10 @@ const SPARKLES = String.fromCodePoint(0x2728);  // ✨ SPARKLES
 // WhatsApp Desktop on Windows corrupts wa.me-prefilled emoji into ◆ on send —
 // a client bug, not fixable here. See the in-modal tip + project memory.
 
+// {name} is filled per-guest by buildMessage().
 export const DEFAULT_TEMPLATES: Templates = {
-  he: `בשעה טובה אנו מזמינים אתכם לחגוג את חתונתנו ${HEART}\nאת כל פרטי היום הגדול ואישורי הגעה תוכלו למצוא בקישור למטה:\n${INVITATION_URL}\nנשמח לחלוק אתכם את הרגע היקר הזה ${SPARKLES}\nנשמח לראותכם!\nשיראל והלל ${HEART}`,
-  fr: `C'est avec une immense joie et une grande reconnaissance envers Hachem que nous vous invitons à célébrer notre mariage ${HEART}\nVous trouverez tous les details du jour J sur le lien ci-dessous :\n${INVITATION_URL}\nNous serons heureux de partager ce précieux moment avec vous ${SPARKLES}\nHâte de vous retrouver pour faire la fête ! Shirel & Hillel ${HEART}`,
+  he: `{name} !\nבשעה טובה אנו מזמינים אתכם לחגוג את חתונתנו ${HEART}\nאת כל פרטי היום הגדול ואישורי הגעה תוכלו למצוא בקישור למטה:\n${INVITATION_URL}\nנשמח לחלוק אתכם את הרגע היקר הזה ${SPARKLES}\nנשמח לראותכם!\nשיראל והלל ${HEART}`,
+  fr: `{name} !\nC'est avec une immense joie et une grande reconnaissance envers Hachem que nous vous invitons à célébrer notre mariage ${HEART}\nVous trouverez tous les details du jour J sur le lien ci-dessous :\n${INVITATION_URL}\nNous serons heureux de partager ce précieux moment avec vous ${SPARKLES}\nHâte de vous retrouver pour faire la fête !\nShirel & Hillel ${HEART}`,
 };
 
 /** Raw phone → international digits (no +). FR mobile 06/07 → 33…, other 0… → 972…, else as-is. */

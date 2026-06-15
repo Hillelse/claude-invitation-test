@@ -16,7 +16,7 @@ type Props = {
 const LS_HE  = 'broadcastTplHe';
 const LS_FR  = 'broadcastTplFr';
 const LS_VER = 'broadcastTplVersion';
-const TPL_VERSION = '8'; // bump when DEFAULT_TEMPLATES changes to flush stale localStorage
+const TPL_VERSION = '9'; // bump when DEFAULT_TEMPLATES changes to flush stale localStorage
 
 const loadTpl = (): Templates => {
   if (typeof window === 'undefined') return DEFAULT_TEMPLATES;
