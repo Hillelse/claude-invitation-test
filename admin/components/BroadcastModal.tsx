@@ -1,16 +1,13 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { useSession } from 'next-auth/react';
-import { supabase, Rsvp } from '@/lib/supabase';
+import { Rsvp } from '@/lib/supabase';
 import { useLang } from '@/app/providers';
 import { DEFAULT_TEMPLATES, buildMessage, resolveLang, guestWaLink, type Templates } from '@/lib/whatsapp';
 
 type Props = {
   recipients: Rsvp[];
   onClose: () => void;
-  onMessaged: (id: number, messagedAt: string) => void;
-  onLangChange: (id: number, lang: 'he' | 'fr' | 'both') => void;
-  toast: (text: string, type?: 'success' | 'error') => void;
+  onMutate: (prev: Rsvp, patch: Partial<Rsvp>, summary: string) => Promise<boolean>;
 };
 
 const LS_HE  = 'broadcastTplHe';
@@ -32,9 +29,8 @@ const loadTpl = (): Templates => {
   };
 };
 
-export default function BroadcastModal({ recipients, onClose, onMessaged, onLangChange, toast }: Props) {
+export default function BroadcastModal({ recipients, onClose, onMutate }: Props) {
   const { t } = useLang();
-  const { data: session } = useSession();
   const [templates, setTemplates] = useState<Templates>(loadTpl);
   const [skipMessaged, setSkipMessaged] = useState(true);
   const [idx, setIdx] = useState(0);
@@ -69,27 +65,21 @@ export default function BroadcastModal({ recipients, onClose, onMessaged, onLang
 
   const current = queue[idx];
 
-  const setLang = async (lang: 'he' | 'fr' | 'both') => {
+  const setLang = (lang: 'he' | 'fr' | 'both') => {
     if (!current) return;
     setOverrides(o => ({ ...o, [current.id]: lang }));
-    const { error } = await supabase.from('rsvp').update({ lang }).eq('id', current.id);
-    if (error) { toast(error.message, 'error'); return; }
-    onLangChange(current.id, lang);
+    void onMutate(current, { lang }, `שפה: ${current.lang ?? '—'}→${lang}`);
   };
 
-  const openAndNext = async () => {
+  // Keep window.open synchronous-first so the user gesture isn't lost, then record the send.
+  const openAndNext = () => {
     if (!current) return;
-    const link = guestWaLink(withLang(current), templates);
+    const guest = current;
+    const link = guestWaLink(withLang(guest), templates);
     if (link) window.open(link, '_blank');
-    const ts = new Date().toISOString();
-    const { error } = await supabase.from('rsvp').update({ messaged_at: ts }).eq('id', current.id);
-    if (error) { toast(error.message, 'error'); return; }
-    await supabase.from('rsvp_audit').insert({
-      rsvp_id: current.id, changed_by: session?.user?.name ?? 'admin', summary: 'נשלחה הזמנה',
-    });
-    setSent(s => new Set(s).add(current.id));
-    onMessaged(current.id, ts);
+    setSent(s => new Set(s).add(guest.id));
     setIdx(i => i + 1);
+    void onMutate(guest, { messaged_at: new Date().toISOString() }, 'נשלחה הזמנה');
   };
 
   const skip = () => { if (current) setSkipped(s => new Set(s).add(current.id)); setIdx(i => i + 1); };

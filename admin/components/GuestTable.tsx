@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { supabase, Rsvp } from '@/lib/supabase';
+import { Rsvp } from '@/lib/supabase';
 import StatusBadge from './StatusBadge';
 import { useLang } from '@/app/providers';
 import { inferLang } from '@/lib/whatsapp';
@@ -10,7 +9,7 @@ type Props = {
   data: Rsvp[];
   onSelect: (r: Rsvp) => void;
   onFilteredChange: (rows: Rsvp[]) => void;
-  onQuickUpdate?: (updated: Rsvp) => void;
+  onQuickMutate?: (guest: Rsvp, patch: Partial<Rsvp>, summary: string) => void | Promise<boolean>;
   statusFilter?: string | null;
   sideFilter?: string | null;
   onFilterSideChange?: (side: string) => void;
@@ -29,9 +28,8 @@ function resolveStatus(r: Rsvp) {
   return 'Pending';
 }
 
-export default function GuestTable({ data, onSelect, onFilteredChange, onQuickUpdate, statusFilter, sideFilter, onFilterSideChange, selectedIds, onToggleId, onToggleAll, duplicateIds }: Props) {
+export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMutate, statusFilter, sideFilter, onFilterSideChange, selectedIds, onToggleId, onToggleAll, duplicateIds }: Props) {
   const { t } = useLang();
-  const { data: session } = useSession();
   const [search, setSearch]             = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterAtt, setFilterAtt]       = useState('all');
@@ -83,14 +81,8 @@ export default function GuestTable({ data, onSelect, onFilteredChange, onQuickUp
   const allOnPageSelected = onToggleId !== undefined && rows.length > 0 && rows.every(r => selectedIds?.has(r.id));
   const someOnPageSelected = onToggleId !== undefined && rows.some(r => selectedIds?.has(r.id));
 
-  const quickSet = async (guest: Rsvp, field: keyof Rsvp, value: Rsvp[keyof Rsvp], summary: string) => {
-    const { error } = await supabase.from('rsvp').update({ [field]: value } as Partial<Rsvp>).eq('id', guest.id);
-    if (error) return;
-    await supabase.from('rsvp_audit').insert({
-      rsvp_id: guest.id, changed_by: session?.user?.name ?? 'admin', summary,
-    });
-    onQuickUpdate?.({ ...guest, [field]: value } as Rsvp);
-  };
+  const quickSet = (guest: Rsvp, field: keyof Rsvp, value: Rsvp[keyof Rsvp], summary: string) =>
+    onQuickMutate?.(guest, { [field]: value } as Partial<Rsvp>, summary);
 
   const colCount = (onToggleId ? 1 : 0) + 11; // 10 data cols + 1 expand col
 

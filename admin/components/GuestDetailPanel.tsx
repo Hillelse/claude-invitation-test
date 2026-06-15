@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { supabase, Rsvp, RsvpAudit } from '@/lib/supabase';
 import StatusBadge from './StatusBadge';
 import { useLang } from '@/app/providers';
@@ -11,15 +10,14 @@ import { translateSummary, splitSummaryParts } from '@/lib/translateSummary';
 type Props = {
   guest: Rsvp;
   onClose: () => void;
-  onUpdate: (updated: Rsvp) => void;
-  onDelete: (id: number) => void;
+  onSave: (prev: Rsvp, patch: Partial<Rsvp>, summary: string) => Promise<boolean>;
+  onDelete: (guest: Rsvp) => Promise<boolean>;
   toast: (text: string, type?: 'success' | 'error') => void;
   isDuplicate?: boolean;
 };
 
-export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, toast, isDuplicate }: Props) {
+export default function GuestDetailPanel({ guest, onClose, onSave, onDelete, toast, isDuplicate }: Props) {
   const { t } = useLang();
-  const { data: session } = useSession();
   const [editing, setEditing]         = useState(false);
   const [form, setForm]               = useState({ ...guest });
   const [saving, setSaving]           = useState(false);
@@ -44,43 +42,35 @@ export default function GuestDetailPanel({ guest, onClose, onUpdate, onDelete, t
 
   const save = async () => {
     if (!isValidPhone(form.phone)) { toast(t.invalidPhone, 'error'); return; }
-    setSaving(true);
-    const { error } = await supabase.from('rsvp').update({
-      name: form.name, phone: form.phone, attending: form.attending,
-      guests: Number(form.guests), pref: form.pref, notes: form.notes || null,
-      status: form.status, internal_notes: form.internal_notes || null,
-      side: form.side, lang: form.lang, messaged_at: form.messaged_at,
-    }).eq('id', guest.id);
-    if (error) { setSaving(false); toast(error.message, 'error'); return; }
+    // Build a patch of only changed fields + a Hebrew diff summary (translated at render).
+    const patch: Partial<Rsvp> = {};
     const diff: string[] = [];
-    // wrap numeric changes in LTR embedding to prevent bidi reversal in RTL UI
-    const ltr = (a: unknown, b: unknown) => '‪' + a + '→' + b + '‬';
-    if (form.name !== guest.name)               diff.push(`שם: ${guest.name}→${form.name}`);
-    if (form.attending !== guest.attending)      diff.push(`הגעה: ${guest.attending}→${form.attending}`);
-    if (Number(form.guests) !== guest.guests)   diff.push(`אורחים: ${ltr(guest.guests, form.guests)}`);
-    if (form.status !== guest.status)           diff.push(`סטטוס: ${guest.status}→${form.status}`);
-    if (form.pref !== guest.pref)               diff.push(`תפריט: ${guest.pref}→${form.pref}`);
-    if (form.phone !== guest.phone)             diff.push(`טלפון: ${ltr(guest.phone, form.phone)}`);
-    if (form.side !== guest.side)               diff.push(`צד: ${guest.side ?? '—'}→${form.side ?? '—'}`);
-    if (form.lang !== guest.lang)               diff.push(`שפה: ${guest.lang ?? '—'}→${form.lang ?? '—'}`);
-    if (!!form.messaged_at !== !!guest.messaged_at) diff.push(`הזמנה: ${guest.messaged_at ? 'כן' : 'לא'}→${form.messaged_at ? 'כן' : 'לא'}`);
-    if (diff.length > 0) {
-      const entry = { rsvp_id: guest.id, changed_by: session?.user?.name ?? 'admin', summary: diff.join(' · ') };
-      const { error: auditErr } = await supabase.from('rsvp_audit').insert(entry);
-      if (auditErr) { toast(`Audit: ${auditErr.message}`, 'error'); }
-    }
+    const ltr = (a: unknown, b: unknown) => '‪' + a + '→' + b + '‬'; // LTR embed prevents bidi reversal
+    if (form.name !== guest.name)                   { patch.name = form.name; diff.push(`שם: ${guest.name}→${form.name}`); }
+    if (form.attending !== guest.attending)         { patch.attending = form.attending; diff.push(`הגעה: ${guest.attending}→${form.attending}`); }
+    if (Number(form.guests) !== guest.guests)       { patch.guests = Number(form.guests); diff.push(`אורחים: ${ltr(guest.guests, form.guests)}`); }
+    if (form.status !== guest.status)               { patch.status = form.status; diff.push(`סטטוס: ${guest.status}→${form.status}`); }
+    if (form.pref !== guest.pref)                   { patch.pref = form.pref; diff.push(`תפריט: ${guest.pref}→${form.pref}`); }
+    if (form.phone !== guest.phone)                 { patch.phone = form.phone; diff.push(`טלפון: ${ltr(guest.phone, form.phone)}`); }
+    if (form.side !== guest.side)                   { patch.side = form.side; diff.push(`צד: ${guest.side ?? '—'}→${form.side ?? '—'}`); }
+    if (form.lang !== guest.lang)                   { patch.lang = form.lang; diff.push(`שפה: ${guest.lang ?? '—'}→${form.lang ?? '—'}`); }
+    if ((form.notes || null) !== (guest.notes || null))                   { patch.notes = form.notes || null; }
+    if ((form.internal_notes || null) !== (guest.internal_notes || null)) { patch.internal_notes = form.internal_notes || null; }
+    if (!!form.messaged_at !== !!guest.messaged_at) { patch.messaged_at = form.messaged_at; diff.push(`הזמנה: ${guest.messaged_at ? 'כן' : 'לא'}→${form.messaged_at ? 'כן' : 'לא'}`); }
+    if (Object.keys(patch).length === 0) { setEditing(false); return; }
+    setSaving(true);
+    const ok = await onSave(guest, patch, diff.length ? diff.join(' · ') : t.guestUpdated);
+    setSaving(false);
+    if (!ok) return;
     const { data: freshHistory } = await supabase.from('rsvp_audit').select('*').eq('rsvp_id', guest.id).order('changed_at', { ascending: false });
     if (freshHistory) setHistory(freshHistory as RsvpAudit[]);
-    setSaving(false);
-    onUpdate({ ...form, guests: Number(form.guests) });
     setEditing(false);
     toast(t.guestUpdated);
   };
 
   const del = async () => {
-    const { error } = await supabase.from('rsvp').delete().eq('id', guest.id);
-    if (error) { toast(error.message, 'error'); return; }
-    onDelete(guest.id);
+    const ok = await onDelete(guest);
+    if (!ok) return;
     onClose();
     toast(t.guestDeleted);
   };

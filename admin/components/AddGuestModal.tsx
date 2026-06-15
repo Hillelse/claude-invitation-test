@@ -1,21 +1,19 @@
 'use client';
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { supabase, Rsvp } from '@/lib/supabase';
+import { Rsvp } from '@/lib/supabase';
 import { useLang } from '@/app/providers';
 import { isValidPhone } from '@/lib/validation';
 
 type Props = {
   onClose: () => void;
-  onAdded: (r: Rsvp) => void;
+  onSubmit: (payload: Partial<Rsvp>) => Promise<Rsvp | null>;
   toast: (text: string, type?: 'success' | 'error') => void;
 };
 
 const EMPTY = { name: '', phone: '', attending: 'pending', guests: 1, pref: 'regular', status: 'Pending', notes: '', internal_notes: '' };
 
-export default function AddGuestModal({ onClose, onAdded, toast }: Props) {
+export default function AddGuestModal({ onClose, onSubmit, toast }: Props) {
   const { t } = useLang();
-  const { data: session } = useSession();
   const [form, setForm] = useState(EMPTY);
   const [side, setSide] = useState<'groom' | 'bride' | null>(null);
   const [saving, setSaving] = useState(false);
@@ -34,17 +32,14 @@ export default function AddGuestModal({ onClose, onAdded, toast }: Props) {
     if (!form.name.trim() || !form.phone.trim()) { toast(t.nameRequired, 'error'); return; }
     if (!isValidPhone(form.phone)) { toast(t.invalidPhone, 'error'); return; }
     setSaving(true);
-    const { data, error } = await supabase.from('rsvp').insert([{
+    const added = await onSubmit({
       name: form.name, phone: form.phone, attending: form.attending,
       guests: Number(form.guests), pref: form.pref, status: form.status,
       notes: form.notes || null, internal_notes: form.internal_notes || null,
       side: side,
-    }]).select().single();
+    });
     setSaving(false);
-    if (error) { toast(error.message, 'error'); return; }
-    const added = data as Rsvp;
-    await supabase.from('rsvp_audit').insert({ rsvp_id: added.id, changed_by: session?.user?.name ?? 'admin', summary: t.auditAdded });
-    onAdded(added);
+    if (!added) return;
     onClose();
     toast(t.guestAdded);
   };

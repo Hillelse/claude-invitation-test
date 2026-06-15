@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 import { supabase, Rsvp, DB_READONLY } from '@/lib/supabase';
+import { useHistory } from '@/lib/useHistory';
 import SummaryBar from '@/components/SummaryBar';
 import GuestTable from '@/components/GuestTable';
 import GuestDetailPanel from '@/components/GuestDetailPanel';
@@ -14,6 +16,8 @@ import * as XLSX from 'xlsx';
 
 export default function DashboardPage() {
   const { t } = useLang();
+  const { data: session } = useSession();
+  const hist = useHistory();
   const [data, setData]             = useState<Rsvp[]>([]);
   const [loading, setLoading]       = useState(true);
   const [selected, setSelected]     = useState<Rsvp | null>(null);
@@ -75,57 +79,147 @@ export default function DashboardPage() {
     return ids;
   }, [data]);
 
-  const handleUpdate   = (u: Rsvp)  => { setData(d => d.map(r => r.id === u.id ? u : r)); setSelected(u); };
-  // Quick actions edit in-place from the table row — update data, keep an open panel
-  // in sync, but never OPEN the panel (don't setSelected from null).
-  const handleQuickUpdate = (u: Rsvp) => { setData(d => d.map(r => r.id === u.id ? u : r)); setSelected(sel => sel && sel.id === u.id ? u : sel); };
-  const handleDelete   = (id: number) => setData(d => d.filter(r => r.id !== id));
-  const handleAdded    = (r: Rsvp)   => setData(d => [r, ...d]);
   const handleFiltered = useCallback((rows: Rsvp[]) => { filteredRef.current = rows; }, []);
-  const handleMessaged = useCallback((id: number, ts: string) => setData(d => d.map(r => r.id === id ? { ...r, messaged_at: ts } : r)), []);
+
+  // ---- Central mutation layer (all writes flow through here so they're undoable) ----
+  const logAudit = async (rsvpId: number, summary: string) => {
+    await supabase.from('rsvp_audit').insert({ rsvp_id: rsvpId, changed_by: session?.user?.name ?? 'admin', summary });
+  };
+
+  // Patch one guest: DB write + optional audit + local state. Returns success.
+  const applyPatch = async (id: number, patch: Partial<Rsvp>, summary?: string): Promise<boolean> => {
+    const { error } = await supabase.from('rsvp').update(patch).eq('id', id);
+    if (error) { toast(error.message, 'error'); return false; }
+    if (summary) await logAudit(id, summary);
+    setData(d => d.map(r => r.id === id ? { ...r, ...patch } : r));
+    setSelected(sel => sel && sel.id === id ? { ...sel, ...patch } : sel);
+    return true;
+  };
+
+  const insertRow = async (payload: Partial<Rsvp>): Promise<Rsvp | null> => {
+    const { data: row, error } = await supabase.from('rsvp').insert(payload).select().single();
+    if (error) { toast(error.message, 'error'); return null; }
+    const r = row as Rsvp;
+    setData(d => [r, ...d.filter(x => x.id !== r.id)]);
+    return r;
+  };
+
+  const deleteRow = async (id: number): Promise<boolean> => {
+    const { error } = await supabase.from('rsvp').delete().eq('id', id);
+    if (error) { toast(error.message, 'error'); return false; }
+    setData(d => d.filter(r => r.id !== id));
+    setSelected(sel => sel && sel.id === id ? null : sel);
+    return true;
+  };
+
+  // Edit a guest (quick action or panel save) — records inverse for undo.
+  const mutateGuest = async (prev: Rsvp, patch: Partial<Rsvp>, summary: string): Promise<boolean> => {
+    const prevVals: Partial<Rsvp> = {};
+    (Object.keys(patch) as (keyof Rsvp)[]).forEach(k => { (prevVals as Record<string, unknown>)[k] = prev[k]; });
+    const ok = await applyPatch(prev.id, patch, summary);
+    if (!ok) return false;
+    hist.record({
+      label: t.undoEdit,
+      undo: () => applyPatch(prev.id, prevVals, `${t.auditUndo} · ${summary}`),
+      redo: () => applyPatch(prev.id, patch, summary),
+    });
+    return true;
+  };
+
+  const addGuest = async (payload: Partial<Rsvp>): Promise<Rsvp | null> => {
+    const row = await insertRow(payload);
+    if (!row) return null;
+    await logAudit(row.id, t.auditAdded);
+    let cur = row;
+    hist.record({
+      label: t.undoAdd,
+      undo: () => deleteRow(cur.id),
+      redo: async () => { const r = await insertRow(payload); if (r) { cur = r; await logAudit(r.id, t.auditAdded); } return !!r; },
+    });
+    return row;
+  };
+
+  const deleteGuest = async (guest: Rsvp): Promise<boolean> => {
+    const ok = await deleteRow(guest.id);
+    if (!ok) return false;
+    let cur = guest;
+    hist.record({
+      label: t.undoDelete,
+      undo: async () => { const { id: _id, created_at: _c, ...rest } = cur; void _id; void _c; const r = await insertRow(rest); if (r) cur = r; return !!r; },
+      redo: () => deleteRow(cur.id),
+    });
+    return true;
+  };
 
   const toggleBulkId  = useCallback((id: number) => setBulkIds(prev => { const n = new Set(prev); if (n.has(id)) { n.delete(id); } else { n.add(id); } return n; }), []);
   const toggleBulkAll = useCallback((ids: number[], selectAll: boolean) => setBulkIds(prev => { const n = new Set(prev); ids.forEach(id => { if (selectAll) { n.add(id); } else { n.delete(id); } }); return n; }), []);
 
-  const handleBulkConfirm = async () => {
+  // Bulk field change with per-row previous-value capture for undo.
+  const bulkPatch = async (patch: Partial<Rsvp>, doneMsg: string) => {
     setBulkSaving(true);
     const ids = Array.from(bulkIds);
-    const { error } = await supabase.from('rsvp').update({ status: 'Confirmed' }).in('id', ids);
+    const prev = data.filter(r => bulkIds.has(r.id)).map(r => {
+      const v: Partial<Rsvp> = {};
+      (Object.keys(patch) as (keyof Rsvp)[]).forEach(k => { (v as Record<string, unknown>)[k] = r[k]; });
+      return { id: r.id, v };
+    });
+    const { error } = await supabase.from('rsvp').update(patch).in('id', ids);
     if (error) { toast(error.message, 'error'); setBulkSaving(false); return; }
-    setData(d => d.map(r => bulkIds.has(r.id) ? { ...r, status: 'Confirmed' } : r));
-    toast(t.bulkConfirmed(ids.length));
-    setBulkIds(new Set()); setBulkSaving(false);
+    setData(d => d.map(r => ids.includes(r.id) ? { ...r, ...patch } : r));
+    hist.record({
+      label: t.undoBulk,
+      undo: async () => { for (const p of prev) await supabase.from('rsvp').update(p.v).eq('id', p.id); setData(d => d.map(r => { const f = prev.find(x => x.id === r.id); return f ? { ...r, ...f.v } : r; })); return true; },
+      redo: async () => { await supabase.from('rsvp').update(patch).in('id', ids); setData(d => d.map(r => ids.includes(r.id) ? { ...r, ...patch } : r)); return true; },
+    });
+    toast(doneMsg); setBulkIds(new Set()); setBulkSaving(false);
   };
 
-  const handleBulkDecline = async () => {
-    setBulkSaving(true);
-    const ids = Array.from(bulkIds);
-    const { error } = await supabase.from('rsvp').update({ status: 'Declined' }).in('id', ids);
-    if (error) { toast(error.message, 'error'); setBulkSaving(false); return; }
-    setData(d => d.map(r => bulkIds.has(r.id) ? { ...r, status: 'Declined' } : r));
-    toast(t.bulkDeclined(ids.length));
-    setBulkIds(new Set()); setBulkSaving(false);
-  };
-
-  const handleBulkLang = async (lang: 'he' | 'fr' | 'both') => {
-    setBulkSaving(true);
-    const ids = Array.from(bulkIds);
-    const { error } = await supabase.from('rsvp').update({ lang }).in('id', ids);
-    if (error) { toast(error.message, 'error'); setBulkSaving(false); return; }
-    setData(d => d.map(r => bulkIds.has(r.id) ? { ...r, lang } : r));
-    toast(t.bulkLangSet(ids.length));
-    setBulkIds(new Set()); setBulkSaving(false);
-  };
+  const handleBulkConfirm = () => bulkPatch({ status: 'Confirmed' }, t.bulkConfirmed(bulkIds.size));
+  const handleBulkDecline = () => bulkPatch({ status: 'Declined' }, t.bulkDeclined(bulkIds.size));
+  const handleBulkLang    = (lang: 'he' | 'fr' | 'both') => bulkPatch({ lang }, t.bulkLangSet(bulkIds.size));
 
   const handleBulkDelete = async () => {
     setBulkSaving(true);
     const ids = Array.from(bulkIds);
+    let rows = data.filter(r => bulkIds.has(r.id));
     const { error } = await supabase.from('rsvp').delete().in('id', ids);
     if (error) { toast(error.message, 'error'); setBulkSaving(false); return; }
     setData(d => d.filter(r => !bulkIds.has(r.id)));
+    hist.record({
+      label: t.undoDelete,
+      undo: async () => {
+        const payloads = rows.map(({ id: _i, created_at: _c, ...rest }) => { void _i; void _c; return rest; });
+        const { data: ins } = await supabase.from('rsvp').insert(payloads).select();
+        const nw = (ins ?? []) as Rsvp[];
+        if (nw.length) { rows = nw; setData(d => [...nw, ...d]); }
+        return nw.length > 0;
+      },
+      redo: async () => { const cur = rows.map(r => r.id); await supabase.from('rsvp').delete().in('id', cur); setData(d => d.filter(r => !cur.includes(r.id))); return true; },
+    });
     toast(t.bulkDeleted(ids.length));
     setBulkIds(new Set()); setConfirmBulkDel(false); setBulkSaving(false);
   };
+
+  // Quick action from a table row — build patch + summary, route through mutateGuest.
+  const handleQuickMutate = (guest: Rsvp, patch: Partial<Rsvp>, summary: string) => mutateGuest(guest, patch, summary);
+
+  const runUndo = useCallback(async () => { const op = await hist.undo(); if (op) toast(`${t.undo}: ${op.label}`); else toast(t.nothingToUndo); }, [hist, t, toast]);
+  const runRedo = useCallback(async () => { const op = await hist.redo(); if (op) toast(`${t.redo}: ${op.label}`); else toast(t.nothingToRedo); }, [hist, t, toast]);
+
+  // Keyboard: Ctrl/Cmd+Z = undo, Ctrl+Shift+Z / Ctrl+Y = redo. Skip while typing.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || el?.isContentEditable) return;
+      const k = e.key.toLowerCase();
+      if (k === 'z' && !e.shiftKey) { e.preventDefault(); void runUndo(); }
+      else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); void runRedo(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [runUndo, runRedo]);
 
   const importXlsx = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -187,9 +281,14 @@ export default function DashboardPage() {
     }));
     const { data: inserted, error } = await supabase.from('rsvp').insert(records).select();
     if (error) { toast(error.message, 'error'); return; }
-    const added = inserted as Rsvp[];
+    let added = inserted as Rsvp[];
     setData(d => [...added, ...d]);
     await supabase.from('rsvp_audit').insert(added.map(r => ({ rsvp_id: r.id, changed_by: 'import', summary: t.auditImported })));
+    hist.record({
+      label: t.undoImport,
+      undo: async () => { const ids = added.map(r => r.id); await supabase.from('rsvp').delete().in('id', ids); setData(d => d.filter(r => !ids.includes(r.id))); return true; },
+      redo: async () => { const { data: ins } = await supabase.from('rsvp').insert(records).select(); const nw = (ins ?? []) as Rsvp[]; if (nw.length) { added = nw; setData(d => [...nw, ...d]); } return nw.length > 0; },
+    });
     toast(t.importDone(added.length, 0));
   };
 
@@ -237,6 +336,10 @@ export default function DashboardPage() {
           <p style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: 4, letterSpacing: '0.12em' }}>{t.pageDate}</p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button onClick={runUndo} disabled={!hist.canUndo || hist.busy} title={hist.canUndo ? `${t.undo}: ${hist.nextUndoLabel}` : t.undo}
+            style={{ ...btn(), padding: '9px 14px', opacity: !hist.canUndo || hist.busy ? 0.4 : 1, cursor: !hist.canUndo || hist.busy ? 'not-allowed' : 'pointer' }}>↶ {t.undo}</button>
+          <button onClick={runRedo} disabled={!hist.canRedo || hist.busy} title={hist.canRedo ? `${t.redo}: ${hist.nextRedoLabel}` : t.redo}
+            style={{ ...btn(), padding: '9px 14px', opacity: !hist.canRedo || hist.busy ? 0.4 : 1, cursor: !hist.canRedo || hist.busy ? 'not-allowed' : 'pointer' }}>↷ {t.redo}</button>
           <input ref={importRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={importXlsx} />
           <button onClick={() => importRef.current?.click()} style={btn()}>{t.import}</button>
           <button onClick={exportXlsx} style={btn()}>{t.export}</button>
@@ -276,21 +379,19 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <GuestTable data={data} onSelect={setSelected} onFilteredChange={handleFiltered} onQuickUpdate={handleQuickUpdate}
+          <GuestTable data={data} onSelect={setSelected} onFilteredChange={handleFiltered} onQuickMutate={handleQuickMutate}
             statusFilter={statusFilter} sideFilter={sideFilter} onFilterSideChange={s => setSideFilter(s === 'all' ? null : s)}
             selectedIds={bulkIds} onToggleId={toggleBulkId} onToggleAll={toggleBulkAll} duplicateIds={duplicateIds} />
         </>
       )}
 
-      {selected && <GuestDetailPanel guest={selected} onClose={() => setSelected(null)} onUpdate={handleUpdate} onDelete={handleDelete} toast={toast} isDuplicate={duplicateIds.has(selected.id)} />}
-      {showAdd && <AddGuestModal onClose={() => setShowAdd(false)} onAdded={handleAdded} toast={toast} />}
+      {selected && <GuestDetailPanel guest={selected} onClose={() => setSelected(null)} onSave={mutateGuest} onDelete={deleteGuest} toast={toast} isDuplicate={duplicateIds.has(selected.id)} />}
+      {showAdd && <AddGuestModal onClose={() => setShowAdd(false)} onSubmit={addGuest} toast={toast} />}
       {showBroadcast && (
         <BroadcastModal
           recipients={bulkIds.size > 0 ? data.filter(r => bulkIds.has(r.id)) : (filteredRef.current.length > 0 ? filteredRef.current : data)}
           onClose={() => setShowBroadcast(false)}
-          onMessaged={handleMessaged}
-          onLangChange={(id, lang) => setData(d => d.map(r => r.id === id ? { ...r, lang } : r))}
-          toast={toast}
+          onMutate={mutateGuest}
         />
       )}
       {importPreview && <ImportPreviewModal rows={importPreview} onConfirm={doImport} onClose={() => setImportPreview(null)} />}
