@@ -16,7 +16,7 @@ type Props = {
 const LS_HE  = 'broadcastTplHe';
 const LS_FR  = 'broadcastTplFr';
 const LS_VER = 'broadcastTplVersion';
-const TPL_VERSION = '7'; // bump when DEFAULT_TEMPLATES changes to flush stale localStorage
+const TPL_VERSION = '8'; // bump when DEFAULT_TEMPLATES changes to flush stale localStorage
 
 const loadTpl = (): Templates => {
   if (typeof window === 'undefined') return DEFAULT_TEMPLATES;
@@ -119,6 +119,11 @@ export default function BroadcastModal({ recipients, onClose, onMessaged, onLang
           {/* Anti-spam note */}
           <div style={{ fontSize: 12, color: '#92400E', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '8px 12px', lineHeight: 1.5 }}>
             ⚠ {t.broadcastNote}
+          </div>
+
+          {/* Emoji tip — WhatsApp Desktop (Windows) corrupts wa.me emoji; send from phone */}
+          <div style={{ fontSize: 12, color: '#1E3A8A', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '8px 12px', lineHeight: 1.5 }}>
+            {t.broadcastEmojiTip}
           </div>
 
           {/* Options */}
