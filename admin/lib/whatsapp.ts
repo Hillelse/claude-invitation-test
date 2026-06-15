@@ -11,8 +11,8 @@ export type Templates = { he: string; fr: string };
 // file-encoding issue). 🤍 = U+1F90D white heart, ✨ = U+2728 sparkles. These
 // transmit correctly through the wa.me link; a ◆ in WhatsApp Web/Desktop's
 // compose box on Windows is that client's render bug — recipients see real emojis.
-const HEART    = String.fromCodePoint(0x1F90D); // 🤍 WHITE HEART
-const SPARKLES = String.fromCodePoint(0x2728);  // ✨ SPARKLES
+const HEART    = String.fromCodePoint(0x2764); // ❤ U+2764 — BMP single code unit, oldest/most universal heart
+const SPARKLES = String.fromCodePoint(0x2728); // ✨ U+2728 — BMP single code unit
 
 export const DEFAULT_TEMPLATES: Templates = {
   he: `בשעה טובה אנו מזמינים אתכם לחגוג את חתונתנו ${HEART}\nאת כל פרטי היום הגדול ואישורי הגעה תוכלו למצוא בקישור למטה:\n${INVITATION_URL}\nנשמח לחלוק אתכם את הרגע היקר הזה ${SPARKLES}\nנשמח לראותכם!\nשיראל והלל ${HEART}`,
