@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { supabase, Rsvp } from '@/lib/supabase';
+import { supabase, Rsvp, DB_READONLY } from '@/lib/supabase';
 import SummaryBar from '@/components/SummaryBar';
 import GuestTable from '@/components/GuestTable';
 import GuestDetailPanel from '@/components/GuestDetailPanel';
@@ -76,6 +76,9 @@ export default function DashboardPage() {
   }, [data]);
 
   const handleUpdate   = (u: Rsvp)  => { setData(d => d.map(r => r.id === u.id ? u : r)); setSelected(u); };
+  // Quick actions edit in-place from the table row — update data, keep an open panel
+  // in sync, but never OPEN the panel (don't setSelected from null).
+  const handleQuickUpdate = (u: Rsvp) => { setData(d => d.map(r => r.id === u.id ? u : r)); setSelected(sel => sel && sel.id === u.id ? u : sel); };
   const handleDelete   = (id: number) => setData(d => d.filter(r => r.id !== id));
   const handleAdded    = (r: Rsvp)   => setData(d => [r, ...d]);
   const handleFiltered = useCallback((rows: Rsvp[]) => { filteredRef.current = rows; }, []);
@@ -212,6 +215,11 @@ export default function DashboardPage() {
 
   return (
     <>
+      {DB_READONLY && (
+        <div style={{ marginBottom: 16, padding: '8px 14px', background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 8, fontSize: 12.5, fontWeight: 600, color: '#92400E', display: 'flex', alignItems: 'center', gap: 8 }}>
+          🧪 DEV (localhost) — changes are NOT saved to the live database. Safe to test freely.
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -260,7 +268,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <GuestTable data={data} onSelect={setSelected} onFilteredChange={handleFiltered} onQuickUpdate={handleUpdate}
+          <GuestTable data={data} onSelect={setSelected} onFilteredChange={handleFiltered} onQuickUpdate={handleQuickUpdate}
             statusFilter={statusFilter} sideFilter={sideFilter} onFilterSideChange={s => setSideFilter(s === 'all' ? null : s)}
             selectedIds={bulkIds} onToggleId={toggleBulkId} onToggleAll={toggleBulkAll} duplicateIds={duplicateIds} />
         </>
