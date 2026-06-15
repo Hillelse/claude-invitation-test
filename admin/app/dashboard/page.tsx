@@ -137,11 +137,14 @@ export default function DashboardPage() {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
       const norm = (v: unknown) => String(v ?? '').trim();
+      // Normalize a header: strip accents (téléphone→telephone), spaces, lowercase.
+      const hkey = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s/g, '').toLowerCase();
+      // Match columns by EXACT header first, then substring. Exact-first prevents
+      // 'nom' (name) from grabbing the 'nombre' (count) column.
       const findVal = (row: Record<string, unknown>, ...keys: string[]) => {
-        for (const k of keys) {
-          const col = Object.keys(row).find(c => c.replace(/\s/g, '').toLowerCase().includes(k.toLowerCase()));
-          if (col !== undefined) return norm(row[col]);
-        }
+        const cols = Object.keys(row);
+        for (const k of keys) { const col = cols.find(c => hkey(c) === hkey(k)); if (col !== undefined) return norm(row[col]); }
+        for (const k of keys) { const col = cols.find(c => hkey(c).includes(hkey(k))); if (col !== undefined) return norm(row[col]); }
         return '';
       };
       const parsed = rows.map(row => {
@@ -150,13 +153,18 @@ export default function DashboardPage() {
         const rawAtt = findVal(row, 'attending', 'présence', 'הגעה', 'rsvp').toLowerCase();
         const attending = rawAtt === 'yes' || rawAtt === 'oui' || rawAtt === 'כן' ? 'yes'
           : rawAtt === 'no' || rawAtt === 'non' || rawAtt === 'לא' ? 'no' : 'pending';
-        const rawPhone = findVal(row, 'phone', 'טלפון', 'mobile', 'נייד', 'tel', 'téléphone', 'cellulaire');
+        const rawPhone = findVal(row, 'phone', 'téléphone', 'telephone', 'טלפון', 'mobile', 'נייד', 'tel', 'cellulaire');
+        // Side / côté — map FR/HE/EN tokens. Test bride first ('mariée' contains 'marié').
+        const rawSide = hkey(findVal(row, 'side', 'côté', 'cote', 'camp', 'צד'));
+        const side: 'groom' | 'bride' | null =
+          /(bride|mariee|femme|epouse|כלה)/.test(rawSide) ? 'bride' :
+          /(groom|marie|mari|homme|חתן)/.test(rawSide)   ? 'groom' : null;
         return {
-          name: findVal(row, 'name', 'שם', 'fullname', 'שםמלא', 'nom'),
+          name: findVal(row, 'name', 'noms', 'nom', 'שם', 'fullname', 'שםמלא'),
           phone: rawPhone,
           normPhone: normalizePhone(rawPhone),
-          guests: Number(findVal(row, 'guests', 'אורחים', 'כמות', 'מספר', 'invités', 'nb', 'number', 'nbguests', 'nombre')) || 1,
-          pref, attending, isDuplicate: false,
+          guests: Number(findVal(row, 'guests', 'nombre', 'אורחים', 'כמות', 'מספר', 'invités', 'nbguests', 'number', 'nb')) || 1,
+          pref, attending, side, isDuplicate: false,
         };
       }).filter(r => r.name && r.phone);
       if (!parsed.length) { toast('No valid rows found', 'error'); return; }
@@ -173,7 +181,7 @@ export default function DashboardPage() {
     if (!rows.length) return;
     const records = rows.map(r => ({
       name: r.name, phone: r.normPhone, guests: r.guests,
-      attending: r.attending, pref: r.pref,
+      attending: r.attending, pref: r.pref, side: r.side,
       status: r.attending === 'yes' ? 'Confirmed' : r.attending === 'no' ? 'Declined' : 'Pending',
       notes: null as null, internal_notes: null as null,
     }));

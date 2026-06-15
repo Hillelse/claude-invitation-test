@@ -9,6 +9,7 @@ export type PreviewRow = {
   guests: number;
   pref: string;
   attending: string;
+  side: 'groom' | 'bride' | null;
   isDuplicate: boolean;
 };
 
@@ -92,7 +93,7 @@ export default function ImportPreviewModal({ rows, onConfirm, onClose }: Props) 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: 'var(--cream-deep)', position: 'sticky', top: 0 }}>
-                  {[t.colName, t.colPhone, t.colGuests, t.colMeal, t.colAttending, ''].map(h => (
+                  {[t.colName, t.colPhone, t.colGuests, t.colMeal, t.colAttending, t.colSide, ''].map(h => (
                     <th key={h} style={{ textAlign: 'start', fontSize: 11, fontWeight: 600, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '9px 14px', borderBottom: '1px solid var(--line)', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
@@ -106,6 +107,9 @@ export default function ImportPreviewModal({ rows, onConfirm, onClose }: Props) 
                     <td style={{ padding: '9px 14px', color: 'var(--ink-soft)' }}>{PREF_LABELS[r.pref] ?? r.pref}</td>
                     <td style={{ padding: '9px 14px', color: r.attending === 'yes' ? '#16A34A' : r.attending === 'no' ? '#DC2626' : 'var(--ink-muted)' }}>
                       {ATT_LABELS[r.attending] ?? r.attending}
+                    </td>
+                    <td style={{ padding: '9px 14px', color: 'var(--ink-soft)' }}>
+                      {r.side === 'groom' ? t.sideGroom : r.side === 'bride' ? t.sideBride : '—'}
                     </td>
                     <td style={{ padding: '9px 14px' }}>
                       {r.isDuplicate
