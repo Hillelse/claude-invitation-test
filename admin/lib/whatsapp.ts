@@ -7,9 +7,16 @@ export const INVITATION_URL = 'https://shirel-hillel-project.vercel.app/';
 
 export type Templates = { he: string; fr: string };
 
+// Emojis written via fromCodePoint so the source stays pure-ASCII (immune to any
+// file-encoding issue). 🤍 = U+1F90D white heart, ✨ = U+2728 sparkles. These
+// transmit correctly through the wa.me link; a ◆ in WhatsApp Web/Desktop's
+// compose box on Windows is that client's render bug — recipients see real emojis.
+const HEART    = String.fromCodePoint(0x1F90D); // 🤍 WHITE HEART
+const SPARKLES = String.fromCodePoint(0x2728);  // ✨ SPARKLES
+
 export const DEFAULT_TEMPLATES: Templates = {
-  he: `שלום {name}! 🌿\nאנחנו מתחתנים ב-9.8.2026 ונשמח לראותכם.\nכל הפרטים ואישור הגעה כאן:\n${INVITATION_URL}`,
-  fr: `Bonjour {name} ! 🌿\nNous nous marions le 9/08/2026 et serions ravis de vous compter parmi nous.\nTous les détails et confirmation ici :\n${INVITATION_URL}`,
+  he: `בשעה טובה אנו מזמינים אתכם לחגוג את חתונתנו ${HEART}\nאת כל פרטי היום הגדול ואישורי הגעה תוכלו למצוא בקישור למטה:\n${INVITATION_URL}\nנשמח לחלוק אתכם את הרגע היקר הזה ${SPARKLES}\nנשמח לראותכם!\nשיראל והלל ${HEART}`,
+  fr: `C'est avec une immense joie et une grande reconnaissance envers Hachem que nous vous invitons à célébrer notre mariage ${HEART}\nVous trouverez tous les details du jour J sur le lien ci-dessous :\n${INVITATION_URL}\nNous serons heureux de partager ce précieux moment avec vous ${SPARKLES}\nHâte de vous retrouver pour faire la fête ! Shirel & Hillel ${HEART}`,
 };
 
 /** Raw phone → international digits (no +). FR mobile 06/07 → 33…, other 0… → 972…, else as-is. */

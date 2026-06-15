@@ -13,11 +13,19 @@ type Props = {
   toast: (text: string, type?: 'success' | 'error') => void;
 };
 
-const LS_HE = 'broadcastTplHe';
-const LS_FR = 'broadcastTplFr';
+const LS_HE  = 'broadcastTplHe';
+const LS_FR  = 'broadcastTplFr';
+const LS_VER = 'broadcastTplVersion';
+const TPL_VERSION = '6'; // bump when DEFAULT_TEMPLATES changes to flush stale localStorage
 
 const loadTpl = (): Templates => {
   if (typeof window === 'undefined') return DEFAULT_TEMPLATES;
+  if (localStorage.getItem(LS_VER) !== TPL_VERSION) {
+    localStorage.removeItem(LS_HE);
+    localStorage.removeItem(LS_FR);
+    localStorage.setItem(LS_VER, TPL_VERSION);
+    return DEFAULT_TEMPLATES;
+  }
   return {
     he: localStorage.getItem(LS_HE) ?? DEFAULT_TEMPLATES.he,
     fr: localStorage.getItem(LS_FR) ?? DEFAULT_TEMPLATES.fr,
