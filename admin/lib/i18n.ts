@@ -145,6 +145,9 @@ export const TEXT = {
     langBoth: 'דו-לשוני',
     langAuto: (l: string) => `אוטומטי · ${l}`,
     filterAllLangs: 'כל השפות',
+    filterAllSent: 'הזמנה: הכל',
+    filterSentYes: 'נשלחה',
+    filterSentNo: 'לא נשלחה',
     bulkSetLangPlaceholder: 'קבע שפה…',
     bulkLangSet: (n: number) => `שפה עודכנה ל-${n} אורחים`,
 
@@ -315,6 +318,9 @@ export const TEXT = {
     langBoth: 'Bilingue',
     langAuto: (l: string) => `Auto · ${l}`,
     filterAllLangs: 'Toutes langues',
+    filterAllSent: 'Invitation : tous',
+    filterSentYes: 'Envoyée',
+    filterSentNo: 'Non envoyée',
     bulkSetLangPlaceholder: 'Définir langue…',
     bulkLangSet: (n: number) => `Langue mise à jour pour ${n} invité${n > 1 ? 's' : ''}`,
 

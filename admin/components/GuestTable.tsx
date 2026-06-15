@@ -36,6 +36,7 @@ export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMu
   const [filterPref, setFilterPref]     = useState('all');
   const [filterSide, setFilterSide]     = useState('all');
   const [filterLang, setFilterLang]     = useState('all');
+  const [filterSent, setFilterSent]     = useState('all');
   const [page, setPage]                 = useState(0);
   const [expandedId, setExpandedId]     = useState<number | null>(null);
 
@@ -59,7 +60,8 @@ export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMu
       (filterAtt === 'all'    || r.attending === filterAtt) &&
       (filterPref === 'all'   || r.pref === filterPref) &&
       (filterSide === 'all'   || r.side === filterSide) &&
-      (filterLang === 'all'   || (filterLang === 'untagged' ? !r.lang : r.lang === filterLang))
+      (filterLang === 'all'   || (filterLang === 'untagged' ? !r.lang : r.lang === filterLang)) &&
+      (filterSent === 'all'   || (filterSent === 'sent' ? !!r.messaged_at : !r.messaged_at))
     );
   });
 
@@ -138,6 +140,11 @@ export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMu
           <option value="he">{t.langHe}</option>
           <option value="fr">{t.langFr}</option>
           <option value="both">{t.langBoth}</option>
+        </select>
+        <select value={filterSent} onChange={e => { setFilterSent(e.target.value); setPage(0); }} style={selStyle}>
+          <option value="all">{t.filterAllSent}</option>
+          <option value="sent">{t.filterSentYes}</option>
+          <option value="unsent">{t.filterSentNo}</option>
         </select>
         {isPendingView && (
           <span style={{ fontSize: 11, fontWeight: 600, color: '#EA580C', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 6, padding: '0 8px', height: 36, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
