@@ -584,6 +584,7 @@ function LangSwitcher({ lang, setLang }) {
 function MusicToggle({ lang }) {
   const audioRef = React.useRef(null);
   const userPausedRef = React.useRef(false); // true only after user explicitly mutes
+  const wasPlayingRef = React.useRef(false); // was music playing when the page got hidden
   const [playing, setPlaying] = React.useState(false);
 
   React.useEffect(() => {
@@ -599,20 +600,35 @@ function MusicToggle({ lang }) {
       if (tgt && tgt.closest && tgt.closest('#music-btn')) return;
       audio.play().catch(() => {});
     };
+    const arm    = () => events.forEach(e => window.addEventListener(e, onGesture, { passive:true }));
     const detach = () => events.forEach(e => window.removeEventListener(e, onGesture));
     // Keep the icon in sync with reality; drop gesture listeners once playing.
     const onPlay  = () => { setPlaying(true); detach(); };
     const onPause = () => setPlaying(false);
+
+    // Pause when the invitation leaves the screen (tab hidden / switched to another
+    // app), resume when it comes back — unless the guest explicitly muted it.
+    const onVisibility = () => {
+      if (document.hidden) {
+        wasPlayingRef.current = !audio.paused;
+        audio.pause();
+      } else if (wasPlayingRef.current && !userPausedRef.current) {
+        audio.play().catch(() => arm()); // if resume is blocked, re-arm gesture restart
+      }
+    };
+
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
+    document.addEventListener('visibilitychange', onVisibility);
 
     audio.play().catch(() => {}); // try immediate autoplay (works if already engaged)
-    events.forEach(e => window.addEventListener(e, onGesture, { passive:true }));
+    arm();
 
     return () => {
       detach();
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
 
