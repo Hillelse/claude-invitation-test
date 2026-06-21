@@ -27,6 +27,7 @@ export default function DashboardPage() {
   const [live, setLive]             = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [sideFilter, setSideFilter]     = useState<string | null>(null);
+  const [mealFilter, setMealFilter]     = useState<string | null>(null);
   const [bulkIds, setBulkIds]       = useState<Set<number>>(new Set());
   const [confirmBulkDel, setConfirmBulkDel] = useState(false);
   const [bulkSaving, setBulkSaving] = useState(false);
@@ -352,7 +353,8 @@ export default function DashboardPage() {
         <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--ink-soft)', fontSize: 13, letterSpacing: '0.2em' }}>{t.loading}</div>
       ) : (
         <>
-          <SummaryBar data={data} activeStatus={statusFilter} onStatusClick={(s) => { setStatusFilter(s); setBulkIds(new Set()); }} activeSide={sideFilter} onSideClick={(s) => { setSideFilter(s); setBulkIds(new Set()); }} />
+          <SummaryBar data={data} activeStatus={statusFilter} onStatusClick={(s) => { setStatusFilter(s); setBulkIds(new Set()); }} activeSide={sideFilter} onSideClick={(s) => { setSideFilter(s); setBulkIds(new Set()); }}
+            activeMeal={mealFilter} onMealClick={(m) => { setMealFilter(m); setStatusFilter(m ? 'Confirmed' : null); setBulkIds(new Set()); }} />
 
           {bulkIds.size > 0 && !confirmBulkDel && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: 'var(--surface)', border: '1px solid var(--green)', borderRadius: 10, marginBottom: 12 }}>
@@ -381,6 +383,7 @@ export default function DashboardPage() {
 
           <GuestTable data={data} onSelect={setSelected} onFilteredChange={handleFiltered} onQuickMutate={handleQuickMutate}
             statusFilter={statusFilter} sideFilter={sideFilter} onFilterSideChange={s => setSideFilter(s === 'all' ? null : s)}
+            mealFilter={mealFilter} onFilterMealChange={m => setMealFilter(m === 'all' ? null : m)}
             selectedIds={bulkIds} onToggleId={toggleBulkId} onToggleAll={toggleBulkAll} duplicateIds={duplicateIds} />
         </>
       )}

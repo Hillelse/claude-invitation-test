@@ -13,6 +13,8 @@ type Props = {
   statusFilter?: string | null;
   sideFilter?: string | null;
   onFilterSideChange?: (side: string) => void;
+  mealFilter?: string | null;
+  onFilterMealChange?: (meal: string) => void;
   selectedIds?: Set<number>;
   onToggleId?: (id: number) => void;
   onToggleAll?: (ids: number[], selectAll: boolean) => void;
@@ -28,7 +30,7 @@ function resolveStatus(r: Rsvp) {
   return 'Pending';
 }
 
-export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMutate, statusFilter, sideFilter, onFilterSideChange, selectedIds, onToggleId, onToggleAll, duplicateIds }: Props) {
+export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMutate, statusFilter, sideFilter, onFilterSideChange, mealFilter, onFilterMealChange, selectedIds, onToggleId, onToggleAll, duplicateIds }: Props) {
   const { t } = useLang();
   const [search, setSearch]             = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -49,6 +51,11 @@ export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMu
     setFilterSide(sideFilter ?? 'all');
     setPage(0);
   }, [sideFilter]);
+
+  useEffect(() => {
+    setFilterPref(mealFilter ?? 'all');
+    setPage(0);
+  }, [mealFilter]);
 
   const PREF_LABELS: Record<string, string> = { regular: t.mealRegular, vegan: t.mealVegan, kosher: t.mealKosher };
 
@@ -124,7 +131,7 @@ export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMu
           <option value="yes">{t.filterYes}</option>
           <option value="no">{t.filterNo}</option>
         </select>
-        <select value={filterPref} onChange={reset(setFilterPref)} style={selStyle}>
+        <select value={filterPref} onChange={e => { setFilterPref(e.target.value); setPage(0); onFilterMealChange?.(e.target.value); }} style={selStyle}>
           <option value="all">{t.filterAllMeals}</option>
           <option value="regular">{t.mealRegular}</option>
           <option value="vegan">{t.mealVegan}</option>

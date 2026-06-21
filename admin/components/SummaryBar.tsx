@@ -8,6 +8,8 @@ type Props = {
   onStatusClick?: (status: string | null) => void;
   activeSide?: string | null;
   onSideClick?: (side: string | null) => void;
+  activeMeal?: string | null;
+  onMealClick?: (meal: string | null) => void;
 };
 
 function resolveStatus(r: Rsvp) {
@@ -17,7 +19,7 @@ function resolveStatus(r: Rsvp) {
   return 'Pending';
 }
 
-export default function SummaryBar({ data, activeStatus, onStatusClick, activeSide, onSideClick }: Props) {
+export default function SummaryBar({ data, activeStatus, onStatusClick, activeSide, onSideClick, activeMeal, onMealClick }: Props) {
   const { t } = useLang();
   const confirmedRows = data.filter(r => resolveStatus(r) === 'Confirmed');
   const confirmed = confirmedRows.reduce((s, r) => s + (r.guests || 1), 0);
@@ -40,9 +42,9 @@ export default function SummaryBar({ data, activeStatus, onStatusClick, activeSi
   ];
 
   const mealCards = [
-    { label: t.mealRegular, value: regular, accent: '#4F6B52' },
-    { label: t.mealVegan,   value: vegan,   accent: '#0891B2' },
-    { label: t.mealKosher,  value: kosher,  accent: '#7C3AED' },
+    { label: t.mealRegular, value: regular, accent: '#4F6B52', meal: 'regular' },
+    { label: t.mealVegan,   value: vegan,   accent: '#0891B2', meal: 'vegan' },
+    { label: t.mealKosher,  value: kosher,  accent: '#7C3AED', meal: 'kosher' },
   ];
 
   return (
@@ -76,12 +78,16 @@ export default function SummaryBar({ data, activeStatus, onStatusClick, activeSi
         <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginInlineEnd: 6, whiteSpace: 'nowrap' }}>
           🍽 {t.confirmed}
         </span>
-        {mealCards.map(m => (
-          <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'var(--cream-deep)', borderRadius: 6 }}>
-            <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{m.label}</span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: m.accent, fontVariantNumeric: 'tabular-nums' }}>{m.value}</span>
-          </div>
-        ))}
+        {mealCards.map(m => {
+          const isActive = activeMeal === m.meal;
+          return (
+            <div key={m.label} onClick={() => onMealClick?.(isActive ? null : m.meal)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'var(--cream-deep)', borderRadius: 6, cursor: onMealClick ? 'pointer' : 'default', border: isActive ? `2px solid ${m.accent}` : '2px solid transparent', transition: 'border-color 0.15s' }}>
+              <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{m.label}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: m.accent, fontVariantNumeric: 'tabular-nums' }}>{m.value}</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Side breakdown */}
