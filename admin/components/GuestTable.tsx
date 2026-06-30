@@ -83,6 +83,7 @@ export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMu
   const now = Date.now();
   const daysSince = (iso: string) => Math.floor((now - new Date(iso).getTime()) / 86_400_000);
 
+  const totalGuests = sorted.reduce((sum, r) => sum + (r.guests || 0), 0);
   const pages = Math.ceil(sorted.length / PAGE_SIZE);
   const rows  = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const reset = (fn: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { fn(e.target.value); setPage(0); };
@@ -367,7 +368,7 @@ export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMu
 
           {/* Footer */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid var(--line)', background: 'var(--cream-deep)' }}>
-            <span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{sorted.length} {t.results}</span>
+            <span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{sorted.length} {t.results} · {totalGuests} {t.colGuests}</span>
             {pages > 1 && (
               <div style={{ display: 'flex', gap: 4, alignItems: 'center', direction: 'ltr' }}>
                 <button disabled={page === 0} onClick={() => setPage(p => p - 1)}
