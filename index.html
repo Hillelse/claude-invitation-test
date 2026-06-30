@@ -834,7 +834,10 @@ const Ic = {
    APP
 ══════════════════════════════════════════ */
 function App() {
-  const [lang, setLang] = React.useState('fr');
+  const [lang, setLang] = React.useState(() => {
+    const prefs = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language || ''];
+    return prefs.some(l => /^(he|iw)\b/i.test(l)) ? 'he' : 'fr';
+  });
   const t   = TEXT[lang];
   const dir = lang === 'he' ? 'rtl' : 'ltr';
   const isHe = lang === 'he';
