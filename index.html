@@ -857,6 +857,14 @@ function App() {
   }, []);
 
   React.useEffect(() => {
+    if (!/rsvp/i.test(window.location.hash)) return;
+    const t = setTimeout(() => {
+      document.getElementById('rsvp')?.scrollIntoView({ behavior:'smooth', block:'start' });
+    }, 2700);
+    return () => clearTimeout(t);
+  }, []);
+
+  React.useEffect(() => {
     document.documentElement.setAttribute('lang', lang);
     document.documentElement.setAttribute('dir', dir);
   }, [lang, dir]);
