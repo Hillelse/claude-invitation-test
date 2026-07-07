@@ -106,7 +106,8 @@ export default function SummaryBar({ data, activeStatus, onStatusClick, activeSi
           <span style={{ fontSize: 15, fontWeight: 700, color: '#BE185D', fontVariantNumeric: 'tabular-nums' }}>{brideCount}</span>
         </div>
         {untaggedCount > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'var(--cream-deep)', borderRadius: 6 }}>
+          <div onClick={() => onSideClick?.(activeSide === 'none' ? null : 'none')}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'var(--cream-deep)', borderRadius: 6, cursor: onSideClick ? 'pointer' : 'default', border: activeSide === 'none' ? '2px solid var(--ink-muted)' : '2px solid transparent', transition: 'border-color 0.15s' }}>
             <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{t.sideUntagged}</span>
             <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-muted)', fontVariantNumeric: 'tabular-nums' }}>{untaggedCount}</span>
           </div>

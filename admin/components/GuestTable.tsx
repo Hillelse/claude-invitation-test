@@ -66,7 +66,7 @@ export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMu
       (filterStatus === 'all' || resolveStatus(r) === filterStatus) &&
       (filterAtt === 'all'    || r.attending === filterAtt) &&
       (filterPref === 'all'   || r.pref === filterPref) &&
-      (filterSide === 'all'   || r.side === filterSide) &&
+      (filterSide === 'all'   || (filterSide === 'none' ? !r.side : r.side === filterSide)) &&
       (filterLang === 'all'   || (filterLang === 'untagged' ? !r.lang : r.lang === filterLang)) &&
       (filterSent === 'all'   || (filterSent === 'sent' ? !!r.messaged_at : !r.messaged_at))
     );
@@ -142,6 +142,7 @@ export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMu
           <option value="all">{t.filterAllSides}</option>
           <option value="groom">{t.sideGroom}</option>
           <option value="bride">{t.sideBride}</option>
+          <option value="none">{t.sideUntagged}</option>
         </select>
         <select value={filterLang} onChange={e => { setFilterLang(e.target.value); setPage(0); }} style={selStyle}>
           <option value="all">{t.filterAllLangs}</option>
@@ -232,7 +233,8 @@ export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMu
                         <span onClick={e => { e.stopPropagation(); const next = filterSide === 'bride' ? 'all' : 'bride'; setFilterSide(next); setPage(0); onFilterSideChange?.(next); }}
                           style={{ padding: '2px 8px', background: '#FCE7F3', color: '#BE185D', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer' }}>{t.sideBride}</span>
                       ) : (
-                        <span style={{ color: 'var(--ink-muted)' }}>—</span>
+                        <span onClick={e => { e.stopPropagation(); const next = filterSide === 'none' ? 'all' : 'none'; setFilterSide(next); setPage(0); onFilterSideChange?.(next); }}
+                          style={{ padding: '2px 8px', background: 'var(--cream-deep)', color: 'var(--ink-soft)', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer' }}>{t.sideUntagged}</span>
                       )}
                     </td>
                     <td style={{ padding: '11px 14px' }}>
