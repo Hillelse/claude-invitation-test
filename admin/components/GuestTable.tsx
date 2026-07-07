@@ -57,6 +57,16 @@ export default function GuestTable({ data, onSelect, onFilteredChange, onQuickMu
     setPage(0);
   }, [mealFilter]);
 
+  // If the "unassigned" side filter is active but every guest now has a side
+  // (e.g. you just assigned the last unassigned one), drop back to "all".
+  useEffect(() => {
+    if (filterSide === 'none' && !data.some(r => !r.side)) {
+      setFilterSide('all');
+      setPage(0);
+      onFilterSideChange?.('all');
+    }
+  }, [data, filterSide, onFilterSideChange]);
+
   const PREF_LABELS: Record<string, string> = { regular: t.mealRegular, vegan: t.mealVegan, kosher: t.mealKosher };
 
   const filtered = data.filter(r => {

@@ -41,12 +41,35 @@ export default function DashboardPage() {
   const removeToast = useCallback((id: number) => setToasts(ts => ts.filter(x => x.id !== id)), []);
 
   useEffect(() => {
-    supabase.from('rsvp').select('*').order('created_at', { ascending: false })
-      .then(({ data: rows, error }) => {
-        if (error) toast(error.message, 'error');
-        else setData(rows as Rsvp[]);
+    (async () => {
+      // Sort so the most-recently-modified guest shows first — whether a guest
+      // filled the RSVP or an admin changed them. Every change (guest RSVP, admin
+      // edit, import) writes an rsvp_audit row, so the latest changed_at per guest
+      // is the last-modified time. The audit sort is best-effort: if that query
+      // fails we still show the guest list (never leave it stuck on loading).
+      try {
+        const { data: rows, error } = await supabase.from('rsvp').select('*').order('created_at', { ascending: false });
+        if (error) { toast(error.message, 'error'); return; }
+        let ordered = rows as Rsvp[];
+        const { data: audits } = await supabase.from('rsvp_audit').select('rsvp_id, changed_at').order('changed_at', { ascending: false });
+        if (audits) {
+          const lastMod = new Map<number, string>();
+          (audits as { rsvp_id: number; changed_at: string }[]).forEach(a => {
+            if (!lastMod.has(a.rsvp_id)) lastMod.set(a.rsvp_id, a.changed_at);
+          });
+          ordered = [...ordered].sort((a, b) => {
+            const ra = lastMod.get(a.id), rb = lastMod.get(b.id);
+            if (ra && rb) return rb.localeCompare(ra);   // both modified → newest first
+            if (ra) return -1;                            // modified before never-modified
+            if (rb) return 1;
+            return b.created_at.localeCompare(a.created_at);
+          });
+        }
+        setData(ordered);
+      } finally {
         setLoading(false);
-      });
+      }
+    })();
 
     const channel = supabase
       .channel('rsvp-realtime')
@@ -61,6 +84,15 @@ export default function DashboardPage() {
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'rsvp' }, ({ old: row }) => {
         setData(d => d.filter(r => r.id !== (row as { id: number }).id));
         setSelected(sel => sel?.id === (row as { id: number }).id ? null : sel);
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rsvp_audit' }, ({ new: a }) => {
+        // Any change (guest RSVP or another admin's edit) logs an audit row → bump
+        // that guest to the top so the most-recently-modified is always first.
+        const au = a as { rsvp_id: number };
+        setData(d => {
+          const row = d.find(r => r.id === au.rsvp_id);
+          return row ? [row, ...d.filter(r => r.id !== au.rsvp_id)] : d;
+        });
       })
       .subscribe(status => setLive(status === 'SUBSCRIBED'));
 
@@ -92,7 +124,12 @@ export default function DashboardPage() {
     const { error } = await supabase.from('rsvp').update(patch).eq('id', id);
     if (error) { toast(error.message, 'error'); return false; }
     if (summary) await logAudit(id, summary);
-    setData(d => d.map(r => r.id === id ? { ...r, ...patch } : r));
+    // Move the just-modified guest to the top (most-recently-modified first).
+    setData(d => {
+      const updated = d.map(r => r.id === id ? { ...r, ...patch } : r);
+      const row = updated.find(r => r.id === id);
+      return row ? [row, ...updated.filter(r => r.id !== id)] : updated;
+    });
     setSelected(sel => sel && sel.id === id ? { ...sel, ...patch } : sel);
     return true;
   };
